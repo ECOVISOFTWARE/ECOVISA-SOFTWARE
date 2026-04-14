@@ -1,1805 +1,1805 @@
-/* =========================
-   ADMIN PANEL PRO (refinado)
-   - Menos blanco
-   - Dept cards con color
-   - Kebab menu (3 puntitos)
-   - Icon picker sin tiles
-   - Color picker tipo grid (imagen 3)
-   - Permisos más legibles
-   - Selects custom
-========================= */
+  /* =========================
+    ADMIN PANEL PRO (refinado)
+    - Menos blanco
+    - Dept cards con color
+    - Kebab menu (3 puntitos)
+    - Icon picker sin tiles
+    - Color picker tipo grid (imagen 3)
+    - Permisos más legibles
+    - Selects custom
+  ========================= */
 
-.apWrap{
-  /* ✅ centro real del layout */
-  width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-
-  /* ✅ “safe padding” simétrico (móvil + notch) */
-  padding-top: 18px;
-  padding-bottom: 24px;
-  padding-left: max(14px, env(safe-area-inset-left));
-  padding-right: max(14px, env(safe-area-inset-right));
-
-  color: rgba(10,12,14,0.92);
-
-  /* ✅ evita scroll lateral fantasma */
-  overflow-x: hidden;
-}
-/* ✅ evita que inputs/grids empujen el ancho hacia un lado */
-.apWrap, .apWrap *{
-  box-sizing: border-box;
-}
-/* cards estilo “mail UI” */
-.apCard{
-  background: rgba(255,255,255,0.78);
-  border: 1px solid rgba(0,0,0,0.10);
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 22px 70px rgba(0,0,0,0.14);
-}
-
-.apCardTitle{
-  color: rgba(10,12,14,0.92);
-}
-.apHint{ color: rgba(10,12,14,0.65); }
-.apMuted{ color: rgba(10,12,14,0.60); }
-
-.apHeader{
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.apTitle{
-  font-size: 22px;
-  font-weight: 1000;
-  letter-spacing: 0.2px;
-}
-
-.apSub{
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 900;
-  opacity: 0.75;
-}
-
-.apHeaderRight{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Buttons */
-.apBtn{
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.12);
-  cursor: pointer;
-  font-weight: 1000;
-  padding: 0 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: transform 140ms ease, filter 160ms ease, background 160ms ease;
-  background: rgba(255,255,255,0.62);
-  color: rgba(10,12,14,0.92);
-}
-.apBtn:hover{ transform: translateY(-1px); filter: brightness(1.02); }
-.apBtn:active{ transform: translateY(0px) scale(0.99); }
-
-.apBtnPrimary{
-  background: rgba(122, 217, 87, 1);
-  border-color: rgba(122, 217, 87, 0.55);
-  color: rgba(6, 26, 45, 0.98);
-}
-.apBtnPrimary:hover{ filter: brightness(0.97); }
-
-.apBtnGhost{
-  background: rgba(255,255,255,0.45);
-}
-.apBtnGhost:hover{ background: rgba(255,255,255,0.52); }
-
-.apHint{
-  font-size: 12px;
-  font-weight: 900;
-  opacity: 0.65;
-}
-
-/* Layout cards */
-.apGrid2{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.apCard{
-  background: rgba(255,255,255,0.92);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 18px 55px rgba(0,0,0,0.10);
-  backdrop-filter: blur(8px);
-}
-.apCardFull{
-  margin-top: 10px;
-}
-
-.apCardTop{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.apCardTopRow{
-  align-items: flex-start;
-}
-
-.apCardTitle{
-  font-weight: 1000;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: rgba(10,12,14,0.88);
-}
-.apHint{ color: rgba(10,12,14,0.55); }
-.apMuted{ color: rgba(10,12,14,0.55); }
-.apList{
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.apListItem{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.apListItemSpread{
-  justify-content: space-between;
-}
-
-.apMuted{
-  font-size: 13px;
-  font-weight: 900;
-  opacity: 0.65;
-}
-
-/* Badges & pills */
-.apBadge{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.62);
-  border: 1px solid rgba(0,0,0,0.10);
-  font-weight: 1000;
-  font-size: 13px;
-}
-
-.apPill{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 999px;
-  padding: 8px 12px;
-  background: rgba(0,0,0,0.06);
-  border: 1px solid rgba(0,0,0,0.10);
-  font-weight: 1000;
-  font-size: 12px;
-}
-
-/* Row center */
-.apRowCenter{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap: 12px;
-  padding: 6px 0 10px;
-}
-
-/* Dept card (color full) */
-.apDeptCard{
-  flex: 1;
-  min-height: 44px;
-  border-radius: 999px;
-  padding: 10px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 1000;
-  border: 1px solid rgba(0,0,0,0.10);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.10);
-}
-
-.apDeptCardIcon{
-  display: inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 18px;
-}
-
-.apDeptCardName{
-  font-size: 13px;
-  letter-spacing: 0.1px;
-}
-
-/* Level line wrapper */
-.apLevelLine{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-/* Kebab + menu */
-.apKebabWrap{
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.apKebabBtn{
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.10);
-  background: rgba(255,255,255,0.30);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: transform 140ms ease, background 160ms ease;
-  color: rgba(10,12,14,0.78);
-}
-.apKebabBtn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.42); }
-.apKebabBtn:active{ transform: scale(0.99); }
-
-.apMiniMenu{
-  position: fixed;
-  background: rgba(12,16,20,0.96);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 14px;
-  padding: 8px;
-  display: flex;
-  gap: 8px;
-  box-shadow: 0 18px 60px rgba(0,0,0,0.45);
-  z-index: 100000;
-  transform: translate(-100%, 0); /* ancla: esquina derecha del botón */
-}
-
-.apMiniMenuPortal.fromTop{ transform-origin: top right; }
-.apMiniMenuPortal.fromBottom{ transform-origin: bottom right; transform: translate(-100%, -100%); }
-
-.apMiniItem{
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  color: rgba(255,255,255,0.88);
-  display: grid;
-  place-items: center;
-  transition: background 160ms ease, transform 140ms ease;
-}
-.apMiniItem:hover{
-  background: rgba(255,255,255,0.08);
-  transform: translateY(-1px);
-}
-.apMiniItem:active{ transform: scale(0.99); }
-
-.apMiniDanger{ color: rgba(244,63,94,0.95); }
-
-/* Filters */
-.apFilters{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.apSearch{
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.12);
-  background: rgba(255,255,255,0.70);
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-}
-
-.apSearchInput{
-  border: 0;
-  outline: none;
-  background: transparent;
-  width: min(360px, 58vw);
-  font-weight: 900;
-  font-size: 13px;
-  color: rgba(10,12,14,0.90);
-}
-
-/* ✅ Selects custom (no default look) */
-.apSelect{
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.12);
-  background: rgba(255,255,255,0.70);
-  padding: 0 38px 0 12px;
-  font-weight: 900;
-  font-size: 13px;
-  outline: none;
-
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-
-  background-image:
-    linear-gradient(45deg, transparent 50%, rgba(10,12,14,0.70) 50%),
-    linear-gradient(135deg, rgba(10,12,14,0.70) 50%, transparent 50%),
-    linear-gradient(to right, rgba(0,0,0,0.10), rgba(0,0,0,0.10));
-  background-position:
-    calc(100% - 18px) 17px,
-    calc(100% - 13px) 17px,
-    calc(100% - 38px) 10px;
-  background-size:
-    6px 6px,
-    6px 6px,
-    1px 20px;
-  background-repeat: no-repeat;
-}
-
-/* Table */
-.apTableWrap{
-  overflow: auto;
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.92);
-  box-shadow: 0 14px 45px rgba(0,0,0,0.08);
-  width: 100%;
-}
-
-.apTable{
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  table-layout: auto;
-  min-width: 980px; /* evita que se aplaste en pantallas medianas */
-}
-.apTable thead th{
-  background: rgba(10,12,14,0.06);
-  border-bottom: 1px solid rgba(0,0,0,0.10);
-  color: rgba(10,12,14,0.82);
-}
-
-.apTable tbody td{
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  color: rgba(10,12,14,0.88);
-}
-
-.apRowTinted{
-  background: color-mix(in srgb, var(--rowTint) 16%, rgba(255,255,255,0.94));
-  box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--rowTint) 8%, transparent);
-}
-
-/* ✅ Texto SIEMPRE negro: no forzamos color en td */
-.apRowTinted td{
-  color: rgba(10,12,14,0.86);
-}
-
-.apTable tbody tr:hover{
-  background: rgba(0,0,0,0.03);
-}
-.apTable tbody tr.apRowTinted:hover{
-  background: color-mix(in srgb, var(--rowTint) 22%, rgba(255,255,255,0.92));
-}
-.apTable thead th{
-  text-align: left;
-  font-size: 12px;
-  font-weight: 1000;
-  letter-spacing: 0.2px;
-  padding: 12px 12px;
-  background: rgba(0,0,0,0.04);
-  border-bottom: 1px solid rgba(0,0,0,0.08);
-  white-space: nowrap;
-  color: rgba(10,12,14,0.72);
-}
-
-.apTable tbody td{
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  font-weight: 900;
-  font-size: 13px;
-  vertical-align: middle;
-  color: rgba(10,12,14,0.86);
-}
-
-
-
-.apTdStrong{ font-weight: 1000; }
-
-.apMono{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-}
-
-.apThActions{
-  width: 120px;
-  text-align: right;
-}
-
-.apActions{
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-/* Icon buttons */
-.apIconBtn{
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.12);
-  background: rgba(255,255,255,0.62);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: transform 140ms ease, filter 160ms ease, background 160ms ease;
-}
-.apIconBtn:hover{ transform: translateY(-1px); filter: brightness(1.03); }
-.apIconBtn:active{ transform: scale(0.99); }
-
-.apIconBtn.apDanger{
-  background: rgba(244,63,94,0.14);
-  border-color: rgba(244,63,94,0.22);
-}
-.apIconBtn.apInfo{
-  background: rgba(59,130,246,0.14);
-  border-color: rgba(59,130,246,0.22);
-}
-.apBtnDanger{
-  background: rgba(244,63,94,0.12) !important;
-  border-color: rgba(244,63,94,0.22) !important;
-  color: rgba(244,63,94,0.95) !important;
-}
-/* Dots */
-.apDot{
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  margin-right: 8px;
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.55);
-}
-.apDot.ok{ background: rgba(34,197,94,0.95); }
-.apDot.off{ background: rgba(148,163,184,0.95); }
-
-.apEmpty{
-  text-align: center;
-  padding: 18px;
-  font-weight: 1000;
-  opacity: 0.75;
-}
-
-/* Dept cell (en tabla) sin contenedor de icono */
-.apDeptCell{
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-.apDeptIcoPlain{
-  display: inline-flex;
-  align-items:center;
-  justify-content:center;
-  color: rgba(10,12,14,0.78);
-}
-.apDeptName{ font-weight: 1000; }
-
-/* Modal base */
-.apModalBack{
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(0,0,0,0.55);
-  display: grid;
-  place-items: center;
-  padding: 16px;
-}
-
-.apModal{
-  width: min(92vw, 860px);
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-
-  background: rgba(255,255,255,0.92);
-  color: rgba(10,12,14,0.92);
-
-  border: 1px solid rgba(0,0,0,0.10);
-  border-radius: 18px;
-  box-shadow: 0 35px 120px rgba(0,0,0,0.22);
-  overflow: hidden;
-}
-
-.apModalTop{
-  background: rgba(255,255,255,0.94);
-  border-bottom: 1px solid rgba(0,0,0,0.10);
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 12px;
-}
-
-.apModalTitle{
-  color: rgba(10,12,14,0.92);
-  font-weight: 1000;
-  font-size: 15px;
-  letter-spacing: 0.2px;
-}
-
-.apModalBody{
-  padding: 14px;
-  overflow-y: auto;
-  overflow-x: hidden; /* ✅ mata el scroll lateral */
-  flex: 1;
-}
-
-/* ✅ MUY IMPORTANTE: evita que los hijos del grid empujen el ancho */
-.apModalGrid,
-.apField,
-.apSpan2{
-  min-width: 0;
-}
-
-.apInput,
-.apSelect{
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* ✅ por si algún grid interno empuja */
-.apColorGridPro,
-.apIconGridPro{
-  max-width: 100%;
-}
-
-/* Acciones que nunca se enciman */
-.apModalActions{
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding-top: 8px;
-  flex-wrap: wrap; /* ✅ evita encimar */
-}
-
-.apAnimIn{ animation: apIn 170ms ease both; }
-@keyframes apIn{
-  from{ transform: translateY(10px) scale(0.98); opacity: 0; }
-  to{ transform: translateY(0) scale(1); opacity: 1; }
-}
-
-/* Modal OUT animation */
-.apModalBack.in{ animation: apBackIn 160ms ease both; }
-.apModalBack.out{ animation: apBackOut 160ms ease both; }
-@keyframes apBackIn{ from{ opacity:0; } to{ opacity:1; } }
-@keyframes apBackOut{ from{ opacity:1; } to{ opacity:0; } }
-
-.apAnimOut{ animation: apOut 170ms ease-in both; }
-@keyframes apOut{
-  from{ transform: translateY(0) scale(1); opacity: 1; }
-  to{ transform: translateY(10px) scale(0.98); opacity: 0; }
-}
-
-/* Modal form */
-.apModalGrid{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.apSpan2{ grid-column: span 2; }
-
-.apField label{
-  display: block;
-  font-size: 12px;
-  font-weight: 1000;
-  opacity: 0.85;
-  margin-bottom: 6px;
-}
-
-.apInput{
-  width: 100%;
-  height: 42px;
-  border-radius: 14px;
-  border: 1px solid rgba(0,0,0,0.10);
-  background: rgba(255,255,255,0.80);
-  color: rgba(10,12,14,0.92);
-  padding: 0 12px;
-  outline: none;
-  font-weight: 900;
-  box-shadow: 0 14px 40px rgba(0,0,0,0.08);
-}
-.apInput::placeholder{ color: rgba(10,12,14,0.45); }
-.apInline{
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.apSmallHint{
-  margin-top: 6px;
-  font-size: 12px;
-  opacity: 0.70;
-  font-weight: 900;
-}
-
-.apModalActions{
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding-top: 6px;
-}
-
-/* =========================
-  ICON PICKER (sin tiles blancos)
-========================= */
-.apIconGridPro{
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-  padding: 0;
-  border-radius: 14px;
-  background: transparent;
-  border: 0;
-  min-height: 186px; /* para que mida parecido al color grid */
-  align-content: start;
-}
-
-.apIconPickPro{
-  height: 44px;
-  border-radius: 14px;
-  border: 1px solid rgba(0,0,0,0.06);
-  background: rgba(255,255,255,0.55);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: transform 140ms ease, background 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-  font-size: 22px;
-  color: rgba(10,12,14,0.80);
-}
-.apIconPickPro:hover{
-  transform: translateY(-1px);
-  background: rgba(255,255,255,0.78);
-  border-color: rgba(0,0,0,0.10);
-}
-.apIconPickPro.active{
-  background: rgba(122,217,87,0.18);
-  box-shadow: 0 0 0 2px rgba(122,217,87,0.28) inset;
-  border-color: rgba(122,217,87,0.30);
-  color: rgba(10,12,14,0.92);
-}
-.apIconPickPro:hover{
-  transform: translateY(-1px);
-  background: rgba(255,255,255,0.06);
-}
-.apIconPickPro.active{
-  background: rgba(122,217,87,0.12);
-  box-shadow: 0 0 0 2px rgba(122,217,87,0.28) inset;
-  color: rgba(122,217,87,0.95);
-}
-
-/* =========================
-  COLOR PICKER (grid tipo imagen 3)
-  - cuadrados pegados
-  - sin contenedor
-  - mismo "peso" visual que icon picker
-========================= */
-.apColorGridPro{
-  display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: 0;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid rgba(0,0,0,0.10);
-  background: rgba(0,0,0,0.02);
-  min-height: 186px;
-}
-
-.apColorCell{
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border: 0;
-  cursor: pointer;
-  transition: transform 120ms ease, outline 120ms ease, filter 120ms ease;
-}
-.apColorCell:hover{
-  transform: scale(1.03);
-  filter: brightness(1.04);
-  z-index: 1;
-}
-.apColorCell.active{
-  outline: 2px solid rgba(255,255,255,0.90);
-  outline-offset: -2px;
-}
-
-/* =========================
-  Puesto + Permisos (modal)
-========================= */
-.apLPWrap{ display: grid; gap: 12px; }
-
-.apLPTop{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  align-items: end;
-}
-
-/* Segmented */
-.apSeg{
-  display:flex;
-  gap: 8px;
-  background: rgba(0,0,0,0.04);
-  border: 1px solid rgba(0,0,0,0.08);
-  padding: 6px;
-  border-radius: 14px;
-}
-.apSegBtn{
-  flex: 1;
-  height: 34px;
-  border-radius: 12px;
-  border: 0;
-  cursor: pointer;
-  font-weight: 1000;
-  background: transparent;
-  color: rgba(10,12,14,0.70);
-  transition: background 160ms ease, color 160ms ease;
-}
-.apSegBtn:hover{ background: rgba(0,0,0,0.04); }
-.apSegBtn.active{
-  background: rgba(122,217,87,0.14);
-  color: rgba(122,217,87,0.95);
-}
-
-/* ✅ Permisos: ejecutivo, legible en modal claro */
-.apPermGridPro{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.apPermItemPro{
-  border: 1px solid rgba(0,0,0,0.10);
-  background: rgba(255,255,255,0.70);
-  border-radius: 16px;
-  padding: 12px;
-  cursor: pointer;
-
-  display: grid;
-  grid-template-columns: 12px 1fr auto;
-  gap: 10px;
-  align-items: center;
-
-  transition: transform 140ms ease, background 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-  text-align: left;
-
-  color: rgba(10,12,14,0.92);
-  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
-}
-
-.apPermItemPro:hover{
-  transform: translateY(-1px);
-  background: rgba(255,255,255,0.78);
-  border-color: rgba(0,0,0,0.14);
-}
-
-.apPermItemPro.on{
-  background: rgba(122,217,87,0.18);
-  border-color: rgba(122,217,87,0.38);
-  box-shadow: 0 0 0 2px rgba(122,217,87,0.22) inset, 0 10px 28px rgba(0,0,0,0.08);
-}
-
-.apPermDot{
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.75);
-}
-.apPermDot.on{ background: rgba(34,197,94,0.95); }
-.apPermDot.off{ background: rgba(148,163,184,0.95); }
-
-.apPermLabelPro{
-  font-weight: 1000;
-  color: rgba(10,12,14,0.92);
-}
-
-.apPermKeyPro{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 12px;
-  font-weight: 900;
-  opacity: 0.65;
-  color: rgba(10,12,14,0.70);
-}
-
-/* ✅ Botones centrados */
-.apPermActionsCenter{
-  display:flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  padding-top: 2px;
-}
-.apCenterHint{ text-align:center; }
-
-/* Responsive */
-@media (max-width: 980px){
-  .apGrid2{ grid-template-columns: 1fr; }
-  .apSearchInput{ width: min(420px, 76vw); }
-}
-@media (max-width: 780px){
-  .apLPTop{ grid-template-columns: 1fr; }
-  .apPermGridPro{ grid-template-columns: 1fr; }
-  .apColorGridPro{ grid-template-columns: repeat(12, 1fr); }
-  .apIconGridPro{ grid-template-columns: repeat(5, 1fr); }
-}
-@media (max-width: 520px){
-  .apModalGrid{ grid-template-columns: 1fr; }
-  .apSpan2{ grid-column: span 1; }
-  .apColorGridPro{ grid-template-columns: repeat(10, 1fr); }
-  .apIconGridPro{ grid-template-columns: repeat(4, 1fr); }
-}
-/* =========================
-   Dept compact + icon-heavy buttons
-========================= */
-.apDeptCardCompact{
-  width: 100%;
-  min-height: 44px;
-  border-radius: 14px;
-  padding: 10px 10px;
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.apDeptLeft{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-}
-
-.apKebabBtnOnColor{
-  background: rgba(255,255,255,0.18);
-  border-color: rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.92);
-}
-
-.apBtnIconOnly{
-  width: 44px;
-  padding: 0;
-  justify-content: center;
-}
-.apBtnIconHeavy svg{
-  font-size: 20px;
-}
-.apBtn svg{
-  font-size: 18px;
-}
-
-/* =========================
-   Mini table for levels
-========================= */
-.apMiniTable{
-  display: grid;
-  gap: 8px;
-}
-
-.apMiniHead{
-  display:grid;
-  grid-template-columns: 1fr 140px 52px;
-  gap: 10px;
-  font-size: 12px;
-  font-weight: 1000;
-  opacity: 0.85;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.04);
-  border: 1px solid rgba(0,0,0,0.08);
-  color: rgba(10,12,14,0.72);
-}
-
-.apMiniHead > div{
-  text-align: center;
-}
-
-.apMiniHeadActions{ opacity: 0; }
-
-
-.apMiniRow{
-  display:grid;
-  grid-template-columns: 1fr 140px 52px;
-  gap: 10px;
-  align-items:center;
-  padding: 12px 12px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.92);
-  border: 1px solid rgba(0,0,0,0.08);
-}
-
-.apMiniCell{
-  display:flex;
-  align-items:center;
-  justify-content:center; /* ✅ centra contenido */
-  gap: 10px;
-}
-
-.apMiniStrong{
-  font-weight: 1000;
-  width: 100%;
-  justify-content:center; /* ✅ centra “Puesto” */
-  text-align:center;
-}
-
-.apMiniCenter{ justify-content:center; }
-.apMiniActions{ justify-content:flex-end; }
-
-.apMiniPill{
-  display:inline-flex;
-  align-items:center;
-  gap: 8px;
-  border-radius: 999px;
-  padding: 8px 10px;
-
-  background: rgba(10,12,14,0.06);
-  border: 1px solid rgba(0,0,0,0.10);
-
-  font-weight: 1000;
-  color: rgba(10,12,14,0.85);
-}
-
-/* =========================
-   Pager
-========================= */
-.apPager{
-  margin-top: 10px;
-  display:flex;
-  align-items:center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.apPagerBtn{
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.12);
-  background: rgba(255,255,255,0.72);
-  color: rgba(10,12,14,0.86);
-  cursor: pointer;
-  font-weight: 1000;
-  transition: transform 140ms ease, background 160ms ease, border-color 160ms ease;
-}
-.apPagerBtn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.82); border-color: rgba(0,0,0,0.16); }
-.apPagerBtn:disabled{ opacity: 0.35; cursor: not-allowed; transform: none; }
-
-.apPagerInfo{
-  display:flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 0 10px;
-  font-weight: 1000;
-  color: rgba(10,12,14,0.78);
-}
-.apPagerStrong{ font-size: 14px; }
-.apPagerSep{ opacity: 0.55; }
-.apPagerMeta{
-  margin-left: 10px;
-  font-size: 12px;
-  opacity: 0.70;
-  font-weight: 900;
-}
-.apDeptGrid{
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 12px;
-}
-
-.apDeptTile{
-  position: relative;
-  height: 132px;
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.10);
-  box-shadow: 0 18px 50px rgba(0,0,0,0.12);
-  padding: 12px;
-
-  display: grid;
-  grid-template-rows: 1fr auto;
-  align-items: center;
-  justify-items: center;
-}
-
-.apDeptTileIcon{
-  display: grid;
-  place-items: center;
-  transform: translateY(4px);
-}
-
-.apDeptTileName{
-  font-weight: 1000;
-  font-size: 13px;
-  text-align: center;
-  padding: 0 6px 6px;
-  line-height: 1.1;
-}
-
-.apDeptTileKebab{
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.10);
-  background: rgba(255,255,255,0.28);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-.apDeptTileKebab:hover{ filter: brightness(1.03); transform: translateY(-1px); }
-
-.apUserCell{
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.apAvatar{
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  overflow: hidden;
-  position: relative;
-  display: grid;
-  place-items: center;
-  background: rgba(0,0,0,0.06);
-  border: 1px solid rgba(0,0,0,0.10);
-}
-
-.apAvatar svg{
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 22px;
-  height: 22px;
-  color: rgba(10,12,14,0.45);
-  z-index: 0;              /* ✅ atrás */
-}
-
-.apAvatar img{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  z-index: 1;              /* ✅ encima del icono */
-}
-.apUserName{
-  font-weight: 1000;
-}
-
-/* =========================
-   SweetAlert PRO (Creado/Actualizado)
-========================= */
-.apSwalPopup{
-  border-radius: 18px !important;
-  padding: 18px 18px 16px !important;
-  background: rgba(255,255,255,0.96) !important;
-  border: 1px solid rgba(0,0,0,0.10) !important;
-  box-shadow: 0 30px 110px rgba(0,0,0,0.22) !important;
-}
-
-.apSwalTitle{
-  font-weight: 1000 !important;
-  color: rgba(10,12,14,0.88) !important;
-  letter-spacing: 0.2px !important;
-  margin-bottom: 10px !important;
-  text-align: center !important;
-}
-
-.apSwalHtml{
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: center !important;
-}
-
-.apSwalCard{
-  display: grid;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.apSwalRow{
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 10px;
-  align-items: center;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: rgba(10,12,14,0.04);
-  border: 1px solid rgba(0,0,0,0.08);
-  text-align: left;
-}
-
-.apSwalLabel{
-  font-weight: 1000;
-  color: rgba(10,12,14,0.70);
-}
-
-.apSwalValue{
-  font-weight: 1000;
-  color: rgba(10,12,14,0.90);
-  word-break: break-word;
-}
-
-.apSwalMono{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-}
-
-.apSwalBtn{
-  margin-top: 14px !important;
-  height: 40px !important;
-  padding: 0 18px !important;
-  border-radius: 12px !important;
-  border: 1px solid rgba(0,0,0,0.12) !important;
-  background: rgba(122, 217, 87, 1) !important;
-  color: rgba(6, 26, 45, 0.98) !important;
-  font-weight: 1000 !important;
-  cursor: pointer !important;
-}
-.apSwalBtn:hover{ filter: brightness(0.97); }
-
-/* =========================
-   Cards fijos + buscadores/pagers internos
-========================= */
-.apCardFixed{
-  height: 440px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ✅ Dentro del card, el contenido debe poder scrollear (no cortarse) */
-.apDeptGrid{
-  flex: 1;
-  overflow: auto;          /* 🔥 antes hidden: se cortaba */
-  align-content: start;
-  padding-right: 4px;      /* pequeño margen para scrollbar */
-}
-
-.apMiniTable{
-  flex: 1;
-  overflow: auto;          /* 🔥 antes hidden: se cortaba */
-  align-content: start;
-  padding-right: 4px;
-}
-
-/* ✅ En móvil: cards dejan de ser “fijos” y se adaptan al contenido */
-@media (max-width: 760px){
-  .apCardFixed{
-    height: auto;          /* 🔥 ya no 440 */
-    overflow: visible;     /* deja respirar */
-  }
-  .apDeptGrid,
-  .apMiniTable{
-    overflow: visible;     /* en cel mejor flujo natural */
-    padding-right: 0;
-  }
-}
-/* =========================
-   ✅ Mobile centering: Dept + Puestos igual de centrados que "Usuarios internos"
-========================= */
-@media (max-width: 760px){
-
-  /* Cards ocupan todo el ancho disponible */
-  .apGrid2 > .apCard{
-    width: 100%;
-  }
-
-  /* ===== Departamentos (tiles centrados) ===== */
-  .apDeptGrid{
-    display: grid;
-    justify-items: center;        /* ✅ centra cada tile */
-    justify-content: center;      /* ✅ centra el grid */
-    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 cols bonitas en móvil */
-    gap: 12px;
-    padding-right: 0;
-  }
-
-  .apDeptTile{
-    width: 100%;
-    max-width: 180px;            /* ✅ evita tiles gigantes y los centra */
-  }
-
-  /* ===== Puestos (mini table centrada y sin “empujar” el card) ===== */
-  .apMiniTable{
-    width: 100%;
-    justify-content: center;
-  }
-
-  .apMiniHead,
-  .apMiniRow{
-    width: 100%;
-    max-width: 560px;            /* ✅ se ve centrado como “Usuarios internos” */
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  /* Ajuste de columnas para pantallas angostas (evita overflow lateral) */
-  .apMiniHead{
-    grid-template-columns: 1fr 110px 48px;
-  }
-  .apMiniRow{
-    grid-template-columns: 1fr 110px 48px;
-  }
-
-  /* Texto: puesto alineado bonito, autoridad centrada, acciones a la derecha */
-  .apMiniStrong{
-    justify-content: flex-start;
-    text-align: left;
-  }
-  .apMiniCell.apMiniCenter{
-    justify-content: center;
-  }
-  .apMiniActions{
-    justify-content: flex-end;
-  }
-}
-
-/* Teléfonos muy chicos: 1 columna para departamentos */
-@media (max-width: 420px){
-  .apDeptGrid{
-    grid-template-columns: 1fr;  /* ✅ 1 col centrada */
-  }
-  .apDeptTile{
-    max-width: 260px;
-  }
-
-  .apMiniHead{
-    grid-template-columns: 1fr 92px 44px;
-  }
-  .apMiniRow{
-    grid-template-columns: 1fr 92px 44px;
-  }
-}
-.apInnerBar{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 6px 0 10px;
-}
-
-.apInnerMeta{
-  font-size: 12px;
-  font-weight: 1000;
-  color: rgba(10,12,14,0.70);
-  white-space: nowrap;
-}
-
-/* buscador chiquito */
-.apSearchSm{
-  height: 36px;
-  border-radius: 12px;
-  padding: 0 10px;
-}
-
-.apSearchInputSm{
-  width: min(260px, 40vw);
-  font-size: 12px;
-}
-
-/* el área de contenido llena el card sin crecer (✅ scroll interno real) */
-.apDeptGrid{
-  flex: 1;
-  overflow: auto;          /* ✅ antes hidden (rompía el layout en móvil) */
-  overflow-x: hidden;
-  align-content: start;
-  padding-right: 4px;      /* espacio para scrollbar */
-}
-
-.apMiniTable{
-  flex: 1;
-  overflow: auto;          /* ✅ antes hidden */
-  overflow-x: hidden;
-  align-content: start;
-  padding-right: 4px;
-}
-
-/* pager interno compacto */
-.apPagerSm{
-  margin-top: 8px;
-}
-
-.apPagerBtnSm{
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-}
-
-.apPagerInfoSm{
-  padding: 0 6px;
-}
-
-/* =========================
-   Header: buscador centrado
-========================= */
-.apHeaderMid{
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 10px;
-}
-
-.apHeaderSearch{
-  width: min(520px, 46vw);
-}
-
-.apHeaderSearchInput{
-  width: 100%;
-}
-
-/* Para cuando solo hay meta (sin buscador) */
-.apInnerBarOnlyMeta{
-  justify-content: flex-end;
-}
-
-/* =========================
-   Usuarios: buscador centrado entre título y filtros
-========================= */
-.apUsersTopRow{
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;            /* ✅ permite bajar filtros en móvil */
-}
-
-.apUsersSearchMid{
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 10px;
-  min-width: 0;               /* ✅ evita empujar ancho */
-}
-
-.apUsersSearch{
-  width: min(520px, 46vw);
-  min-width: 0;               /* ✅ evita overflow */
-}
-
-.apUsersSearchInput{
-  width: 100%;
-  min-width: 0;               /* ✅ evita overflow */
-}
-
-.apUsersFiltersRight{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  min-width: 0;               /* ✅ evita empujar ancho */
-}
-
-/* ✅ IMPORTANTÍSIMO: que los selects NO fuercen ancho */
-.apUsersFiltersRight select{
-  min-width: 0;
-  max-width: 100%;
-}
-@media (max-width: 760px) {
   .apWrap{
-    padding-top: 12px;
-    padding-bottom: 16px;
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
+    /* ✅ centro real del layout */
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+
+    /* ✅ “safe padding” simétrico (móvil + notch) */
+    padding-top: 18px;
+    padding-bottom: 24px;
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+
+    color: rgba(10,12,14,0.92);
+
+    /* ✅ evita scroll lateral fantasma */
+    overflow-x: hidden;
   }
+  /* ✅ evita que inputs/grids empujen el ancho hacia un lado */
+  .apWrap, .apWrap *{
+    box-sizing: border-box;
+  }
+  /* cards estilo “mail UI” */
+  .apCard{
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 22px 70px rgba(0,0,0,0.14);
+  }
+
+  .apCardTitle{
+    color: rgba(10,12,14,0.92);
+  }
+  .apHint{ color: rgba(10,12,14,0.65); }
+  .apMuted{ color: rgba(10,12,14,0.60); }
 
   .apHeader{
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  /* ✅ Título arriba */
-  .apHeader > div:first-child{
-    width: 100%;
-  }
-
-  /* ✅ Botonera como fila (tipo dashboard) */
-  .apHeaderRight{
-    order: 2;
-    width: 100%;
     display: flex;
-    justify-content: stretch;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .apTitle{
+    font-size: 22px;
+    font-weight: 1000;
+    letter-spacing: 0.2px;
+  }
+
+  .apSub{
+    margin-top: 2px;
+    font-size: 13px;
+    font-weight: 900;
+    opacity: 0.75;
+  }
+
+  .apHeaderRight{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Buttons */
+  .apBtn{
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    cursor: pointer;
+    font-weight: 1000;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 140ms ease, filter 160ms ease, background 160ms ease;
+    background: rgba(255,255,255,0.62);
+    color: rgba(10,12,14,0.92);
+  }
+  .apBtn:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+  .apBtn:active{ transform: translateY(0px) scale(0.99); }
+
+  .apBtnPrimary{
+    background: rgba(122, 217, 87, 1);
+    border-color: rgba(122, 217, 87, 0.55);
+    color: rgba(6, 26, 45, 0.98);
+  }
+  .apBtnPrimary:hover{ filter: brightness(0.97); }
+
+  .apBtnGhost{
+    background: rgba(255,255,255,0.45);
+  }
+  .apBtnGhost:hover{ background: rgba(255,255,255,0.52); }
+
+  .apHint{
+    font-size: 12px;
+    font-weight: 900;
+    opacity: 0.65;
+  }
+
+  /* Layout cards */
+  .apGrid2{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .apCard{
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 18px 55px rgba(0,0,0,0.10);
+    backdrop-filter: blur(8px);
+  }
+  .apCardFull{
+    margin-top: 10px;
+  }
+
+  .apCardTop{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .apCardTopRow{
+    align-items: flex-start;
+  }
+
+  .apCardTitle{
+    font-weight: 1000;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: rgba(10,12,14,0.88);
+  }
+  .apHint{ color: rgba(10,12,14,0.55); }
+  .apMuted{ color: rgba(10,12,14,0.55); }
+  .apList{
+    display: flex;
+    flex-direction: column;
     gap: 10px;
   }
 
-  /* ✅ Botón “Usuario” ocupa todo lo posible */
-  .apHeaderRight .apBtnPrimary{
+  .apListItem{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .apListItemSpread{
+    justify-content: space-between;
+  }
+
+  .apMuted{
+    font-size: 13px;
+    font-weight: 900;
+    opacity: 0.65;
+  }
+
+  /* Badges & pills */
+  .apBadge{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.62);
+    border: 1px solid rgba(0,0,0,0.10);
+    font-weight: 1000;
+    font-size: 13px;
+  }
+
+  .apPill{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.10);
+    font-weight: 1000;
+    font-size: 12px;
+  }
+
+  /* Row center */
+  .apRowCenter{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 12px;
+    padding: 6px 0 10px;
+  }
+
+  /* Dept card (color full) */
+  .apDeptCard{
     flex: 1;
+    min-height: 44px;
+    border-radius: 999px;
+    padding: 10px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 1000;
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+  }
+
+  .apDeptCardIcon{
+    display: inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 18px;
+  }
+
+  .apDeptCardName{
+    font-size: 13px;
+    letter-spacing: 0.1px;
+  }
+
+  /* Level line wrapper */
+  .apLevelLine{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Kebab + menu */
+  .apKebabWrap{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
   }
 
-  /* ✅ Botón refresh “tap friendly” */
-  .apHeaderRight .apBtnIconOnly{
-    width: 46px;
-    height: 46px;
+  .apKebabBtn{
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.30);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 140ms ease, background 160ms ease;
+    color: rgba(10,12,14,0.78);
+  }
+  .apKebabBtn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.42); }
+  .apKebabBtn:active{ transform: scale(0.99); }
+
+  .apMiniMenu{
+    position: fixed;
+    background: rgba(12,16,20,0.96);
+    border: 1px solid rgba(255,255,255,0.10);
     border-radius: 14px;
-  }
-
-  /* ✅ Buscador FULL-WIDTH abajo (como dashboard) */
-  .apHeaderMid{
-    order: 3;
-    width: 100%;
-    padding: 0;
+    padding: 8px;
     display: flex;
-    justify-content: stretch;
+    gap: 8px;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.45);
+    z-index: 100000;
+    transform: translate(-100%, 0); /* ancla: esquina derecha del botón */
   }
 
-  .apHeaderSearch{
-    width: 100%;
+  .apMiniMenuPortal.fromTop{ transform-origin: top right; }
+  .apMiniMenuPortal.fromBottom{ transform-origin: bottom right; transform: translate(-100%, -100%); }
+
+  .apMiniItem{
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    color: rgba(255,255,255,0.88);
+    display: grid;
+    place-items: center;
+    transition: background 160ms ease, transform 140ms ease;
+  }
+  .apMiniItem:hover{
+    background: rgba(255,255,255,0.08);
+    transform: translateY(-1px);
+  }
+  .apMiniItem:active{ transform: scale(0.99); }
+
+  .apMiniDanger{ color: rgba(244,63,94,0.95); }
+
+  /* Filters */
+  .apFilters{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .apSearch{
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.70);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
   }
 
   .apSearchInput{
+    border: 0;
+    outline: none;
+    background: transparent;
+    width: min(360px, 58vw);
+    font-weight: 900;
+    font-size: 13px;
+    color: rgba(10,12,14,0.90);
+  }
+
+  /* ✅ Selects custom (no default look) */
+  .apSelect{
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.70);
+    padding: 0 38px 0 12px;
+    font-weight: 900;
+    font-size: 13px;
+    outline: none;
+
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    background-image:
+      linear-gradient(45deg, transparent 50%, rgba(10,12,14,0.70) 50%),
+      linear-gradient(135deg, rgba(10,12,14,0.70) 50%, transparent 50%),
+      linear-gradient(to right, rgba(0,0,0,0.10), rgba(0,0,0,0.10));
+    background-position:
+      calc(100% - 18px) 17px,
+      calc(100% - 13px) 17px,
+      calc(100% - 38px) 10px;
+    background-size:
+      6px 6px,
+      6px 6px,
+      1px 20px;
+    background-repeat: no-repeat;
+  }
+
+  /* Table */
+  .apTableWrap{
+    overflow: auto;
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 14px 45px rgba(0,0,0,0.08);
     width: 100%;
   }
-}
 
-/* ✅ Extra: en teléfonos chicos, evita que todo se apriete */
-@media (max-width: 420px){
-  .apBtn{
-    height: 44px;
-    border-radius: 14px;
-  }
-  .apTitle{ font-size: 20px; }
-  .apSub{ font-size: 12px; }
-}
-/* ✅ Usuarios: layout PRO en móvil (buscador 100% + filtros 2 columnas) */
-@media (max-width: 760px){
-
-  .apUsersTopRow{
-    align-items: flex-start;
-  }
-
-  .apUsersSearchMid{
-    order: 2;
+  .apTable{
     width: 100%;
-    padding: 0;
-    justify-content: stretch;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: auto;
+    min-width: 980px; /* evita que se aplaste en pantallas medianas */
+  }
+  .apTable thead th{
+    background: rgba(10,12,14,0.06);
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+    color: rgba(10,12,14,0.82);
   }
 
-  .apUsersSearch{
-    width: 100%;
+  .apTable tbody td{
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    color: rgba(10,12,14,0.88);
   }
 
-  .apUsersFiltersRight{
-    order: 3;
-    width: 100%;
-    justify-content: stretch;
+  .apRowTinted{
+    background: color-mix(in srgb, var(--rowTint) 16%, rgba(255,255,255,0.94));
+    box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--rowTint) 8%, transparent);
+  }
+
+  /* ✅ Texto SIEMPRE negro: no forzamos color en td */
+  .apRowTinted td{
+    color: rgba(10,12,14,0.86);
+  }
+
+  .apTable tbody tr:hover{
+    background: rgba(0,0,0,0.03);
+  }
+  .apTable tbody tr.apRowTinted:hover{
+    background: color-mix(in srgb, var(--rowTint) 22%, rgba(255,255,255,0.92));
+  }
+  .apTable thead th{
+    text-align: left;
+    font-size: 12px;
+    font-weight: 1000;
+    letter-spacing: 0.2px;
+    padding: 12px 12px;
+    background: rgba(0,0,0,0.04);
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    white-space: nowrap;
+    color: rgba(10,12,14,0.72);
+  }
+
+  .apTable tbody td{
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-weight: 900;
+    font-size: 13px;
+    vertical-align: middle;
+    color: rgba(10,12,14,0.86);
+  }
+
+
+
+  .apTdStrong{ font-weight: 1000; }
+
+  .apMono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  }
+
+  .apThActions{
+    width: 120px;
+    text-align: right;
+  }
+
+  .apActions{
+    display: flex;
+    justify-content: flex-end;
     gap: 8px;
   }
 
-  /* 2 selects = 2 columnas (no se salen, no se cortan) */
-  .apUsersFiltersRight > *{
-    flex: 1;
-    min-width: 0;
+  /* Icon buttons */
+  .apIconBtn{
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.62);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 140ms ease, filter 160ms ease, background 160ms ease;
+  }
+  .apIconBtn:hover{ transform: translateY(-1px); filter: brightness(1.03); }
+  .apIconBtn:active{ transform: scale(0.99); }
+
+  .apIconBtn.apDanger{
+    background: rgba(244,63,94,0.14);
+    border-color: rgba(244,63,94,0.22);
+  }
+  .apIconBtn.apInfo{
+    background: rgba(59,130,246,0.14);
+    border-color: rgba(59,130,246,0.22);
+  }
+  .apBtnDanger{
+    background: rgba(244,63,94,0.12) !important;
+    border-color: rgba(244,63,94,0.22) !important;
+    color: rgba(244,63,94,0.95) !important;
+  }
+  /* Dots */
+  .apDot{
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    margin-right: 8px;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.55);
+  }
+  .apDot.ok{ background: rgba(34,197,94,0.95); }
+  .apDot.off{ background: rgba(148,163,184,0.95); }
+
+  .apEmpty{
+    text-align: center;
+    padding: 18px;
+    font-weight: 1000;
+    opacity: 0.75;
   }
 
-  /* por si ProSelect renderiza un select adentro */
-  .apUsersFiltersRight select{
-    width: 100%;
+  /* Dept cell (en tabla) sin contenedor de icono */
+  .apDeptCell{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
-}
-/* ✅ Tabla -> Cards PRO en móvil (compactas, no gigantes) */
-@media (max-width: 760px) {
-  .apTableWrap {
-    overflow-x: hidden;
-    background: transparent;     /* ✅ menos “caja blanca dentro de caja” */
-    border: 0;
-    box-shadow: none;
+  .apDeptIcoPlain{
+    display: inline-flex;
+    align-items:center;
+    justify-content:center;
+    color: rgba(10,12,14,0.78);
   }
+  .apDeptName{ font-weight: 1000; }
 
-  .apTable {
-    min-width: 0;
-    width: 100%;
-  }
-
-  .apTable thead { display: none; }
-
-  .apTable,
-  .apTable tbody,
-  .apTable tr,
-  .apTable td {
-    display: block;
-    width: 100%;
+  /* Modal base */
+  .apModalBack{
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,0.55);
+    display: grid;
+    place-items: center;
+    padding: 16px;
   }
 
-  /* Card */
-  .apTable tbody tr {
-    margin-bottom: 10px;
-    border-radius: 16px;
+  .apModal{
+    width: min(92vw, 860px);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+
+    background: rgba(255,255,255,0.92);
+    color: rgba(10,12,14,0.92);
+
     border: 1px solid rgba(0,0,0,0.10);
-    background: rgba(255,255,255,0.94);
-    box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+    border-radius: 18px;
+    box-shadow: 0 35px 120px rgba(0,0,0,0.22);
     overflow: hidden;
   }
 
-  .apTable tbody td {
-    border: 0;
-    padding: 8px 12px;
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* ✅ balanceado */
-    gap: 10px;
+  .apModalTop{
+    background: rgba(255,255,255,0.94);
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 12px;
+  }
+
+  .apModalTitle{
+    color: rgba(10,12,14,0.92);
+    font-weight: 1000;
+    font-size: 15px;
+    letter-spacing: 0.2px;
+  }
+
+  .apModalBody{
+    padding: 14px;
+    overflow-y: auto;
+    overflow-x: hidden; /* ✅ mata el scroll lateral */
+    flex: 1;
+  }
+
+  /* ✅ MUY IMPORTANTE: evita que los hijos del grid empujen el ancho */
+  .apModalGrid,
+  .apField,
+  .apSpan2{
     min-width: 0;
   }
 
-  .apTable tbody td::before {
-    content: attr(data-label);
+  .apInput,
+  .apSelect{
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* ✅ por si algún grid interno empuja */
+  .apColorGridPro,
+  .apIconGridPro{
+    max-width: 100%;
+  }
+
+  /* Acciones que nunca se enciman */
+  .apModalActions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 8px;
+    flex-wrap: wrap; /* ✅ evita encimar */
+  }
+
+  .apAnimIn{ animation: apIn 170ms ease both; }
+  @keyframes apIn{
+    from{ transform: translateY(10px) scale(0.98); opacity: 0; }
+    to{ transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  /* Modal OUT animation */
+  .apModalBack.in{ animation: apBackIn 160ms ease both; }
+  .apModalBack.out{ animation: apBackOut 160ms ease both; }
+  @keyframes apBackIn{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes apBackOut{ from{ opacity:1; } to{ opacity:0; } }
+
+  .apAnimOut{ animation: apOut 170ms ease-in both; }
+  @keyframes apOut{
+    from{ transform: translateY(0) scale(1); opacity: 1; }
+    to{ transform: translateY(10px) scale(0.98); opacity: 0; }
+  }
+
+  /* Modal form */
+  .apModalGrid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .apSpan2{ grid-column: span 2; }
+
+  .apField label{
+    display: block;
+    font-size: 12px;
     font-weight: 1000;
+    opacity: 0.85;
+    margin-bottom: 6px;
+  }
+
+  .apInput{
+    width: 100%;
+    height: 42px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.80);
+    color: rgba(10,12,14,0.92);
+    padding: 0 12px;
+    outline: none;
+    font-weight: 900;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.08);
+  }
+  .apInput::placeholder{ color: rgba(10,12,14,0.45); }
+  .apInline{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .apSmallHint{
+    margin-top: 6px;
+    font-size: 12px;
     opacity: 0.70;
+    font-weight: 900;
+  }
+
+  .apModalActions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 6px;
+  }
+
+  /* =========================
+    ICON PICKER (sin tiles blancos)
+  ========================= */
+  .apIconGridPro{
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    padding: 0;
+    border-radius: 14px;
+    background: transparent;
+    border: 0;
+    min-height: 186px; /* para que mida parecido al color grid */
+    align-content: start;
+  }
+
+  .apIconPickPro{
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.06);
+    background: rgba(255,255,255,0.55);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform 140ms ease, background 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    font-size: 22px;
+    color: rgba(10,12,14,0.80);
+  }
+  .apIconPickPro:hover{
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.78);
+    border-color: rgba(0,0,0,0.10);
+  }
+  .apIconPickPro.active{
+    background: rgba(122,217,87,0.18);
+    box-shadow: 0 0 0 2px rgba(122,217,87,0.28) inset;
+    border-color: rgba(122,217,87,0.30);
+    color: rgba(10,12,14,0.92);
+  }
+  .apIconPickPro:hover{
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.06);
+  }
+  .apIconPickPro.active{
+    background: rgba(122,217,87,0.12);
+    box-shadow: 0 0 0 2px rgba(122,217,87,0.28) inset;
+    color: rgba(122,217,87,0.95);
+  }
+
+  /* =========================
+    COLOR PICKER (grid tipo imagen 3)
+    - cuadrados pegados
+    - sin contenedor
+    - mismo "peso" visual que icon picker
+  ========================= */
+  .apColorGridPro{
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(0,0,0,0.02);
+    min-height: 186px;
+  }
+
+  .apColorCell{
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 0;
+    cursor: pointer;
+    transition: transform 120ms ease, outline 120ms ease, filter 120ms ease;
+  }
+  .apColorCell:hover{
+    transform: scale(1.03);
+    filter: brightness(1.04);
+    z-index: 1;
+  }
+  .apColorCell.active{
+    outline: 2px solid rgba(255,255,255,0.90);
+    outline-offset: -2px;
+  }
+
+  /* =========================
+    Puesto + Permisos (modal)
+  ========================= */
+  .apLPWrap{ display: grid; gap: 12px; }
+
+  .apLPTop{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: end;
+  }
+
+  /* Segmented */
+  .apSeg{
+    display:flex;
+    gap: 8px;
+    background: rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 6px;
+    border-radius: 14px;
+  }
+  .apSegBtn{
+    flex: 1;
+    height: 34px;
+    border-radius: 12px;
+    border: 0;
+    cursor: pointer;
+    font-weight: 1000;
+    background: transparent;
+    color: rgba(10,12,14,0.70);
+    transition: background 160ms ease, color 160ms ease;
+  }
+  .apSegBtn:hover{ background: rgba(0,0,0,0.04); }
+  .apSegBtn.active{
+    background: rgba(122,217,87,0.14);
+    color: rgba(122,217,87,0.95);
+  }
+
+  /* ✅ Permisos: ejecutivo, legible en modal claro */
+  .apPermGridPro{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .apPermItemPro{
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.70);
+    border-radius: 16px;
+    padding: 12px;
+    cursor: pointer;
+
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    gap: 10px;
+    align-items: center;
+
+    transition: transform 140ms ease, background 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    text-align: left;
+
+    color: rgba(10,12,14,0.92);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+  }
+
+  .apPermItemPro:hover{
+    transform: translateY(-1px);
+    background: rgba(255,255,255,0.78);
+    border-color: rgba(0,0,0,0.14);
+  }
+
+  .apPermItemPro.on{
+    background: rgba(122,217,87,0.18);
+    border-color: rgba(122,217,87,0.38);
+    box-shadow: 0 0 0 2px rgba(122,217,87,0.22) inset, 0 10px 28px rgba(0,0,0,0.08);
+  }
+
+  .apPermDot{
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.75);
+  }
+  .apPermDot.on{ background: rgba(34,197,94,0.95); }
+  .apPermDot.off{ background: rgba(148,163,184,0.95); }
+
+  .apPermLabelPro{
+    font-weight: 1000;
+    color: rgba(10,12,14,0.92);
+  }
+
+  .apPermKeyPro{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    font-weight: 900;
+    opacity: 0.65;
+    color: rgba(10,12,14,0.70);
+  }
+
+  /* ✅ Botones centrados */
+  .apPermActionsCenter{
+    display:flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding-top: 2px;
+  }
+  .apCenterHint{ text-align:center; }
+
+  /* Responsive */
+  @media (max-width: 980px){
+    .apGrid2{ grid-template-columns: 1fr; }
+    .apSearchInput{ width: min(420px, 76vw); }
+  }
+  @media (max-width: 780px){
+    .apLPTop{ grid-template-columns: 1fr; }
+    .apPermGridPro{ grid-template-columns: 1fr; }
+    .apColorGridPro{ grid-template-columns: repeat(12, 1fr); }
+    .apIconGridPro{ grid-template-columns: repeat(5, 1fr); }
+  }
+  @media (max-width: 520px){
+    .apModalGrid{ grid-template-columns: 1fr; }
+    .apSpan2{ grid-column: span 1; }
+    .apColorGridPro{ grid-template-columns: repeat(10, 1fr); }
+    .apIconGridPro{ grid-template-columns: repeat(4, 1fr); }
+  }
+  /* =========================
+    Dept compact + icon-heavy buttons
+  ========================= */
+  .apDeptCardCompact{
+    width: 100%;
+    min-height: 44px;
+    border-radius: 14px;
+    padding: 10px 10px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .apDeptLeft{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+  }
+
+  .apKebabBtnOnColor{
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.92);
+  }
+
+  .apBtnIconOnly{
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+  .apBtnIconHeavy svg{
+    font-size: 20px;
+  }
+  .apBtn svg{
+    font-size: 18px;
+  }
+
+  /* =========================
+    Mini table for levels
+  ========================= */
+  .apMiniTable{
+    display: grid;
+    gap: 8px;
+  }
+
+  .apMiniHead{
+    display:grid;
+    grid-template-columns: 1fr 140px 52px;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 1000;
+    opacity: 0.85;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.08);
+    color: rgba(10,12,14,0.72);
+  }
+
+  .apMiniHead > div{
+    text-align: center;
+  }
+
+  .apMiniHeadActions{ opacity: 0; }
+
+
+  .apMiniRow{
+    display:grid;
+    grid-template-columns: 1fr 140px 52px;
+    gap: 10px;
+    align-items:center;
+    padding: 12px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .apMiniCell{
+    display:flex;
+    align-items:center;
+    justify-content:center; /* ✅ centra contenido */
+    gap: 10px;
+  }
+
+  .apMiniStrong{
+    font-weight: 1000;
+    width: 100%;
+    justify-content:center; /* ✅ centra “Puesto” */
+    text-align:center;
+  }
+
+  .apMiniCenter{ justify-content:center; }
+  .apMiniActions{ justify-content:flex-end; }
+
+  .apMiniPill{
+    display:inline-flex;
+    align-items:center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 8px 10px;
+
+    background: rgba(10,12,14,0.06);
+    border: 1px solid rgba(0,0,0,0.10);
+
+    font-weight: 1000;
+    color: rgba(10,12,14,0.85);
+  }
+
+  /* =========================
+    Pager
+  ========================= */
+  .apPager{
+    margin-top: 10px;
+    display:flex;
+    align-items:center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .apPagerBtn{
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: rgba(255,255,255,0.72);
+    color: rgba(10,12,14,0.86);
+    cursor: pointer;
+    font-weight: 1000;
+    transition: transform 140ms ease, background 160ms ease, border-color 160ms ease;
+  }
+  .apPagerBtn:hover{ transform: translateY(-1px); background: rgba(255,255,255,0.82); border-color: rgba(0,0,0,0.16); }
+  .apPagerBtn:disabled{ opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .apPagerInfo{
+    display:flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 0 10px;
+    font-weight: 1000;
+    color: rgba(10,12,14,0.78);
+  }
+  .apPagerStrong{ font-size: 14px; }
+  .apPagerSep{ opacity: 0.55; }
+  .apPagerMeta{
+    margin-left: 10px;
+    font-size: 12px;
+    opacity: 0.70;
+    font-weight: 900;
+  }
+  .apDeptGrid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+
+  .apDeptTile{
+    position: relative;
+    height: 132px;
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: 0 18px 50px rgba(0,0,0,0.12);
+    padding: 12px;
+
+    display: grid;
+    grid-template-rows: 1fr auto;
+    align-items: center;
+    justify-items: center;
+  }
+
+  .apDeptTileIcon{
+    display: grid;
+    place-items: center;
+    transform: translateY(4px);
+  }
+
+  .apDeptTileName{
+    font-weight: 1000;
+    font-size: 13px;
+    text-align: center;
+    padding: 0 6px 6px;
+    line-height: 1.1;
+  }
+
+  .apDeptTileKebab{
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: rgba(255,255,255,0.28);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .apDeptTileKebab:hover{ filter: brightness(1.03); transform: translateY(-1px); }
+
+  .apUserCell{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .apAvatar{
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    display: grid;
+    place-items: center;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.10);
+  }
+
+  .apAvatar svg{
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 22px;
+    height: 22px;
+    color: rgba(10,12,14,0.45);
+    z-index: 0;              /* ✅ atrás */
+  }
+
+  .apAvatar img{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 1;              /* ✅ encima del icono */
+  }
+  .apUserName{
+    font-weight: 1000;
+  }
+
+  /* =========================
+    SweetAlert PRO (Creado/Actualizado)
+  ========================= */
+  .apSwalPopup{
+    border-radius: 18px !important;
+    padding: 18px 18px 16px !important;
+    background: rgba(255,255,255,0.96) !important;
+    border: 1px solid rgba(0,0,0,0.10) !important;
+    box-shadow: 0 30px 110px rgba(0,0,0,0.22) !important;
+  }
+
+  .apSwalTitle{
+    font-weight: 1000 !important;
+    color: rgba(10,12,14,0.88) !important;
+    letter-spacing: 0.2px !important;
+    margin-bottom: 10px !important;
+    text-align: center !important;
+  }
+
+  .apSwalHtml{
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+  }
+
+  .apSwalCard{
+    display: grid;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .apSwalRow{
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(10,12,14,0.04);
+    border: 1px solid rgba(0,0,0,0.08);
+    text-align: left;
+  }
+
+  .apSwalLabel{
+    font-weight: 1000;
+    color: rgba(10,12,14,0.70);
+  }
+
+  .apSwalValue{
+    font-weight: 1000;
+    color: rgba(10,12,14,0.90);
+    word-break: break-word;
+  }
+
+  .apSwalMono{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  }
+
+  .apSwalBtn{
+    margin-top: 14px !important;
+    height: 40px !important;
+    padding: 0 18px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(0,0,0,0.12) !important;
+    background: rgba(122, 217, 87, 1) !important;
+    color: rgba(6, 26, 45, 0.98) !important;
+    font-weight: 1000 !important;
+    cursor: pointer !important;
+  }
+  .apSwalBtn:hover{ filter: brightness(0.97); }
+
+  /* =========================
+    Cards fijos + buscadores/pagers internos
+  ========================= */
+  .apCardFixed{
+    height: 440px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ✅ Dentro del card, el contenido debe poder scrollear (no cortarse) */
+  .apDeptGrid{
+    flex: 1;
+    overflow: auto;          /* 🔥 antes hidden: se cortaba */
+    align-content: start;
+    padding-right: 4px;      /* pequeño margen para scrollbar */
+  }
+
+  .apMiniTable{
+    flex: 1;
+    overflow: auto;          /* 🔥 antes hidden: se cortaba */
+    align-content: start;
+    padding-right: 4px;
+  }
+
+  /* ✅ En móvil: cards dejan de ser “fijos” y se adaptan al contenido */
+  @media (max-width: 760px){
+    .apCardFixed{
+      height: auto;          /* 🔥 ya no 440 */
+      overflow: visible;     /* deja respirar */
+    }
+    .apDeptGrid,
+    .apMiniTable{
+      overflow: visible;     /* en cel mejor flujo natural */
+      padding-right: 0;
+    }
+  }
+  /* =========================
+    ✅ Mobile centering: Dept + Puestos igual de centrados que "Usuarios internos"
+  ========================= */
+  @media (max-width: 760px){
+
+    /* Cards ocupan todo el ancho disponible */
+    .apGrid2 > .apCard{
+      width: 100%;
+    }
+
+    /* ===== Departamentos (tiles centrados) ===== */
+    .apDeptGrid{
+      display: grid;
+      justify-items: center;        /* ✅ centra cada tile */
+      justify-content: center;      /* ✅ centra el grid */
+      grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 cols bonitas en móvil */
+      gap: 12px;
+      padding-right: 0;
+    }
+
+    .apDeptTile{
+      width: 100%;
+      max-width: 180px;            /* ✅ evita tiles gigantes y los centra */
+    }
+
+    /* ===== Puestos (mini table centrada y sin “empujar” el card) ===== */
+    .apMiniTable{
+      width: 100%;
+      justify-content: center;
+    }
+
+    .apMiniHead,
+    .apMiniRow{
+      width: 100%;
+      max-width: 560px;            /* ✅ se ve centrado como “Usuarios internos” */
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Ajuste de columnas para pantallas angostas (evita overflow lateral) */
+    .apMiniHead{
+      grid-template-columns: 1fr 110px 48px;
+    }
+    .apMiniRow{
+      grid-template-columns: 1fr 110px 48px;
+    }
+
+    /* Texto: puesto alineado bonito, autoridad centrada, acciones a la derecha */
+    .apMiniStrong{
+      justify-content: flex-start;
+      text-align: left;
+    }
+    .apMiniCell.apMiniCenter{
+      justify-content: center;
+    }
+    .apMiniActions{
+      justify-content: flex-end;
+    }
+  }
+
+  /* Teléfonos muy chicos: 1 columna para departamentos */
+  @media (max-width: 420px){
+    .apDeptGrid{
+      grid-template-columns: 1fr;  /* ✅ 1 col centrada */
+    }
+    .apDeptTile{
+      max-width: 260px;
+    }
+
+    .apMiniHead{
+      grid-template-columns: 1fr 92px 44px;
+    }
+    .apMiniRow{
+      grid-template-columns: 1fr 92px 44px;
+    }
+  }
+  .apInnerBar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0 10px;
+  }
+
+  .apInnerMeta{
+    font-size: 12px;
+    font-weight: 1000;
     color: rgba(10,12,14,0.70);
     white-space: nowrap;
   }
 
-  /* ✅ Trabajador como “header” del card */
-/* 🔥 Header de la card móvil */
-.apTdStrong{
-  display: flex !important;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-
-  padding: 14px 12px 6px 12px;
-  text-align: center;
-}
-
-/* 👇 Ahora mostramos la palabra TRABAJADOR debajo de la foto */
-.apTdStrong::before{
-  content: "Trabajador";
-  font-weight: 1000;
-  font-size: 12px;
-  opacity: 0.65;
-  letter-spacing: 0.4px;
-}
-
-/* Contenedor interno */
-.apUserCell{
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  text-align: center;
-}
-.apAvatar{
-  width: 82px;
-  height: 82px;
-  box-shadow: 0 22px 70px rgba(0,0,0,0.18);
-}
-  .apAvatar svg{
-    width: 30px;
-    height: 30px;
-  }
-.apUserName{
-  font-weight: 1000;
-  font-size: 15px;
-  text-align: center;
-  line-height: 1.2;
-  margin-top: 2px;
-}
-  /* ✅ Oculta lo que lo hace gigante (si quieres luego lo hacemos toggle) */
-  .apTable tbody td[data-label="Usuario"],
-  .apTable tbody td[data-label="Contraseña"]{
-    display: none !important;
+  /* buscador chiquito */
+  .apSearchSm{
+    height: 36px;
+    border-radius: 12px;
+    padding: 0 10px;
   }
 
-  /* ✅ Acciones: HORIZONTALES en 1 renglón */
-  .apTable tbody td.apActions{
-    /* 🔥 antes era grid por herencia, por eso se apilaban */
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center;
-    justify-content: center;
-
-    gap: 10px;
-
-    /* ✅ sin label */
-    padding-top: 10px;
-    padding-bottom: 14px;
+  .apSearchInputSm{
+    width: min(260px, 40vw);
+    font-size: 12px;
   }
 
-  .apTable tbody td.apActions::before{
-    content: none !important;
+  /* el área de contenido llena el card sin crecer (✅ scroll interno real) */
+  .apDeptGrid{
+    flex: 1;
+    overflow: auto;          /* ✅ antes hidden (rompía el layout en móvil) */
+    overflow-x: hidden;
+    align-content: start;
+    padding-right: 4px;      /* espacio para scrollbar */
   }
 
-  /* ✅ por si existe alguna regla vieja */
-  .apActions{
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    flex-wrap: nowrap !important;  /* 1 sola línea */
+  .apMiniTable{
+    flex: 1;
+    overflow: auto;          /* ✅ antes hidden */
+    overflow-x: hidden;
+    align-content: start;
+    padding-right: 4px;
   }
-    .apIconBtn{
-    width: 40px;
-    height: 40px;
+
+  /* pager interno compacto */
+  .apPagerSm{
+    margin-top: 8px;
+  }
+
+  .apPagerBtnSm{
+    width: 36px;
+    height: 36px;
     border-radius: 12px;
   }
 
+  .apPagerInfoSm{
+    padding: 0 6px;
+  }
+
+  /* =========================
+    Header: buscador centrado
+  ========================= */
+  .apHeaderMid{
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 10px;
+  }
+
+  .apHeaderSearch{
+    width: min(520px, 46vw);
+  }
+
+  .apHeaderSearchInput{
+    width: 100%;
+  }
+
+  /* Para cuando solo hay meta (sin buscador) */
+  .apInnerBarOnlyMeta{
+    justify-content: flex-end;
+  }
+
+  /* =========================
+    Usuarios: buscador centrado entre título y filtros
+  ========================= */
+  .apUsersTopRow{
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;            /* ✅ permite bajar filtros en móvil */
+  }
+
+  .apUsersSearchMid{
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 10px;
+    min-width: 0;               /* ✅ evita empujar ancho */
+  }
+
+  .apUsersSearch{
+    width: min(520px, 46vw);
+    min-width: 0;               /* ✅ evita overflow */
+  }
+
+  .apUsersSearchInput{
+    width: 100%;
+    min-width: 0;               /* ✅ evita overflow */
+  }
+
+  .apUsersFiltersRight{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;               /* ✅ evita empujar ancho */
+  }
+
+  /* ✅ IMPORTANTÍSIMO: que los selects NO fuercen ancho */
+  .apUsersFiltersRight select{
+    min-width: 0;
+    max-width: 100%;
+  }
+  @media (max-width: 760px) {
+    .apWrap{
+      padding-top: 12px;
+      padding-bottom: 16px;
+      padding-left: max(12px, env(safe-area-inset-left));
+      padding-right: max(12px, env(safe-area-inset-right));
+    }
+
+    .apHeader{
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    /* ✅ Título arriba */
+    .apHeader > div:first-child{
+      width: 100%;
+    }
+
+    /* ✅ Botonera como fila (tipo dashboard) */
+    .apHeaderRight{
+      order: 2;
+      width: 100%;
+      display: flex;
+      justify-content: stretch;
+      gap: 10px;
+    }
+
+    /* ✅ Botón “Usuario” ocupa todo lo posible */
+    .apHeaderRight .apBtnPrimary{
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* ✅ Botón refresh “tap friendly” */
+    .apHeaderRight .apBtnIconOnly{
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+    }
+
+    /* ✅ Buscador FULL-WIDTH abajo (como dashboard) */
+    .apHeaderMid{
+      order: 3;
+      width: 100%;
+      padding: 0;
+      display: flex;
+      justify-content: stretch;
+    }
+
+    .apHeaderSearch{
+      width: 100%;
+    }
+
+    .apSearchInput{
+      width: 100%;
+    }
+  }
+
+  /* ✅ Extra: en teléfonos chicos, evita que todo se apriete */
+  @media (max-width: 420px){
+    .apBtn{
+      height: 44px;
+      border-radius: 14px;
+    }
+    .apTitle{ font-size: 20px; }
+    .apSub{ font-size: 12px; }
+  }
+  /* ✅ Usuarios: layout PRO en móvil (buscador 100% + filtros 2 columnas) */
+  @media (max-width: 760px){
+
+    .apUsersTopRow{
+      align-items: flex-start;
+    }
+
+    .apUsersSearchMid{
+      order: 2;
+      width: 100%;
+      padding: 0;
+      justify-content: stretch;
+    }
+
+    .apUsersSearch{
+      width: 100%;
+    }
+
+    .apUsersFiltersRight{
+      order: 3;
+      width: 100%;
+      justify-content: stretch;
+      gap: 8px;
+    }
+
+    /* 2 selects = 2 columnas (no se salen, no se cortan) */
+    .apUsersFiltersRight > *{
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* por si ProSelect renderiza un select adentro */
+    .apUsersFiltersRight select{
+      width: 100%;
+    }
+  }
+  /* ✅ Tabla -> Cards PRO en móvil (compactas, no gigantes) */
+  @media (max-width: 760px) {
+    .apTableWrap {
+      overflow-x: hidden;
+      background: transparent;     /* ✅ menos “caja blanca dentro de caja” */
+      border: 0;
+      box-shadow: none;
+    }
+
+    .apTable {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .apTable thead { display: none; }
+
+    .apTable,
+    .apTable tbody,
+    .apTable tr,
+    .apTable td {
+      display: block;
+      width: 100%;
+    }
+
+    /* Card */
+    .apTable tbody tr {
+      margin-bottom: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.94);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .apTable tbody td {
+      border: 0;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr; /* ✅ balanceado */
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .apTable tbody td::before {
+      content: attr(data-label);
+      font-weight: 1000;
+      opacity: 0.70;
+      color: rgba(10,12,14,0.70);
+      white-space: nowrap;
+    }
+
+    /* ✅ Trabajador como “header” del card */
+  /* 🔥 Header de la card móvil */
   .apTdStrong{
-    padding-top: 10px;
-    padding-bottom: 6px;
-  }
-    /* ✅ En móvil: SOLO “Trabajador” (avatar+nombre) + “Acciones” */
-  .apTable tbody td[data-label="Departamento"],
-  .apTable tbody td[data-label="Puesto"],
-  .apTable tbody td[data-label="Activo"]{
-    display: none !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 14px 12px 6px 12px;
+    text-align: center;
   }
 
-  /* ✅ Card no pegada a bordes */
-  .apTable tbody tr{
-    margin-left: 6px;
-    margin-right: 6px;
+  /* 👇 Ahora mostramos la palabra TRABAJADOR debajo de la foto */
+  .apTdStrong::before{
+    content: "Trabajador";
+    font-weight: 1000;
+    font-size: 12px;
+    opacity: 0.65;
+    letter-spacing: 0.4px;
   }
 
-  /* ✅ Header (avatar+nombre) más limpio */
-  .apTdStrong{
-    padding-top: 12px;
-    padding-bottom: 8px;
+  /* Contenedor interno */
+  .apUserCell{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+  .apAvatar{
+    width: 82px;
+    height: 82px;
+    box-shadow: 0 22px 70px rgba(0,0,0,0.18);
+  }
+    .apAvatar svg{
+      width: 30px;
+      height: 30px;
+    }
+  .apUserName{
+    font-weight: 1000;
+    font-size: 15px;
+    text-align: center;
+    line-height: 1.2;
+    margin-top: 2px;
+  }
+    /* ✅ Oculta lo que lo hace gigante (si quieres luego lo hacemos toggle) */
+    .apTable tbody td[data-label="Usuario"],
+    .apTable tbody td[data-label="Contraseña"]{
+      display: none !important;
+    }
+
+    /* ✅ Acciones: HORIZONTALES en 1 renglón */
+    .apTable tbody td.apActions{
+      /* 🔥 antes era grid por herencia, por eso se apilaban */
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center;
+      justify-content: center;
+
+      gap: 10px;
+
+      /* ✅ sin label */
+      padding-top: 10px;
+      padding-bottom: 14px;
+    }
+
+    .apTable tbody td.apActions::before{
+      content: none !important;
+    }
+
+    /* ✅ por si existe alguna regla vieja */
+    .apActions{
+      display: flex !important;
+      flex-direction: row !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      flex-wrap: nowrap !important;  /* 1 sola línea */
+    }
+      .apIconBtn{
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+    }
+
+    .apTdStrong{
+      padding-top: 10px;
+      padding-bottom: 6px;
+    }
+      /* ✅ En móvil: SOLO “Trabajador” (avatar+nombre) + “Acciones” */
+    .apTable tbody td[data-label="Departamento"],
+    .apTable tbody td[data-label="Puesto"],
+    .apTable tbody td[data-label="Activo"]{
+      display: none !important;
+    }
+
+    /* ✅ Card no pegada a bordes */
+    .apTable tbody tr{
+      margin-left: 6px;
+      margin-right: 6px;
+    }
+
+    /* ✅ Header (avatar+nombre) más limpio */
+    .apTdStrong{
+      padding-top: 12px;
+      padding-bottom: 8px;
+    }
+
+    /* ✅ Acciones: una sola fila compacta debajo del nombre */
+    .apTable tbody td.apActions{
+      padding-top: 8px;
+      padding-bottom: 14px;
+    }
+
+    .apActions{
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: nowrap; /* ✅ 1 sola fila */
+    }
+
+    .apIconBtn{
+      width: 44px;   /* ✅ más “tap-friendly” */
+      height: 44px;
+      border-radius: 14px;
+    }
+  }
+  /* =========================
+    MODAL DETALLES (pro)
+  ========================= */
+  .apDetailsWrap{
+    display: grid;
+    gap: 14px;
   }
 
-  /* ✅ Acciones: una sola fila compacta debajo del nombre */
-  .apTable tbody td.apActions{
-    padding-top: 8px;
-    padding-bottom: 14px;
+  .apDetailsHero{
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: 8px;
+    padding: 8px 0 2px;
   }
 
-  .apActions{
+  .apDetailsAvatar{
+    width: 86px;
+    height: 86px;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    display: grid;
+    place-items: center;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.12);
+  }
+
+  .apDetailsAvatar svg{
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 34px;
+    height: 34px;
+    color: rgba(10,12,14,0.45);
+    z-index: 0;
+  }
+
+  .apDetailsAvatar img{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    z-index: 1;
+  }
+
+  .apDetailsName{
+    font-weight: 1000;
+    font-size: 16px;
+    color: rgba(10,12,14,0.92);
+  }
+
+  .apDetailsSub{
+    font-weight: 900;
+    font-size: 12px;
+    opacity: 0.72;
+  }
+
+  .apDetailsGrid{
+    border-radius: 16px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.70);
+    overflow: hidden;
+  }
+
+  .apDetailsRow{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .apDetailsRow:last-child{ border-bottom: 0; }
+
+  .apDetailsLabel{
+    font-weight: 1000;
+    opacity: 0.70;
+    color: rgba(10,12,14,0.70);
+  }
+
+  .apDetailsValue{
+    font-weight: 1000;
+    color: rgba(10,12,14,0.92);
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .apDetailsInline{
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .apDetailsDeptIco{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.80;
+  }
+
+  .apDetailsActions{
     display: flex;
     justify-content: center;
     gap: 10px;
-    flex-wrap: nowrap; /* ✅ 1 sola fila */
+    flex-wrap: wrap;
+    padding-top: 2px;
   }
-
-  .apIconBtn{
-    width: 44px;   /* ✅ más “tap-friendly” */
-    height: 44px;
-    border-radius: 14px;
-  }
-}
-/* =========================
-   MODAL DETALLES (pro)
-========================= */
-.apDetailsWrap{
-  display: grid;
-  gap: 14px;
-}
-
-.apDetailsHero{
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  gap: 8px;
-  padding: 8px 0 2px;
-}
-
-.apDetailsAvatar{
-  width: 86px;
-  height: 86px;
-  border-radius: 999px;
-  overflow: hidden;
-  position: relative;
-  display: grid;
-  place-items: center;
-  background: rgba(0,0,0,0.06);
-  border: 1px solid rgba(0,0,0,0.10);
-  box-shadow: 0 18px 60px rgba(0,0,0,0.12);
-}
-
-.apDetailsAvatar svg{
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 34px;
-  height: 34px;
-  color: rgba(10,12,14,0.45);
-  z-index: 0;
-}
-
-.apDetailsAvatar img{
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  z-index: 1;
-}
-
-.apDetailsName{
-  font-weight: 1000;
-  font-size: 16px;
-  color: rgba(10,12,14,0.92);
-}
-
-.apDetailsSub{
-  font-weight: 900;
-  font-size: 12px;
-  opacity: 0.72;
-}
-
-.apDetailsGrid{
-  border-radius: 16px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.70);
-  overflow: hidden;
-}
-
-.apDetailsRow{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  align-items: center;
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-}
-.apDetailsRow:last-child{ border-bottom: 0; }
-
-.apDetailsLabel{
-  font-weight: 1000;
-  opacity: 0.70;
-  color: rgba(10,12,14,0.70);
-}
-
-.apDetailsValue{
-  font-weight: 1000;
-  color: rgba(10,12,14,0.92);
-  text-align: right;
-  word-break: break-word;
-}
-
-.apDetailsInline{
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.apDetailsDeptIco{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.80;
-}
-
-.apDetailsActions{
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding-top: 2px;
-}

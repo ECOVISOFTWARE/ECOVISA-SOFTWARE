@@ -8,14 +8,49 @@ const COMPANY = {
   name:     'ECOVISA',
   full:     'Ecología, Vida y Salud, S.A. de C.V.',
   address:  'Blvd. Jesús García Morales No. 834, Col. La manga, Hermosillo, Sonora',
-  phone:    '01 800 624 34 24',
+  phone:    '668 8197879',
   web:      'www.ecovisa.com',
   navy:     '#1a3c5e',
   teal:     '#0ea5a0',
   BASE_URL: 'https://ecovisa-software.onrender.com',
 };
 
-const LOGO_PATH = path.join(__dirname, '../../web/public/assets/ECOVISA_ICON.png');
+const LOGO_PATH  = path.join(__dirname, '../../web/public/assets/ECOVISA_ICON.png');
+const LOGOS_PATH = path.join(__dirname, '../../web/public/assets/LOGOS.png');
+const LADA_PATH  = path.join(__dirname, '../../web/public/assets/lada.png');
+
+const LOGO_BUFFER  = fs.existsSync(LOGO_PATH)  ? fs.readFileSync(LOGO_PATH)  : null;
+const LOGOS_BUFFER = fs.existsSync(LOGOS_PATH) ? fs.readFileSync(LOGOS_PATH) : null;
+const LADA_BUFFER  = fs.existsSync(LADA_PATH)  ? fs.readFileSync(LADA_PATH)  : null;
+
+const qrBufferCache = new Map();
+
+async function getQrBuffer(publicToken, width = 72) {
+  const safeToken = String(publicToken || '').trim();
+  if (!safeToken) return null;
+
+  const cacheKey = `${safeToken}__${width}`;
+  if (qrBufferCache.has(cacheKey)) {
+    return qrBufferCache.get(cacheKey);
+  }
+
+  const qrUrl = `${COMPANY.BASE_URL}/cotizacion/${safeToken}`;
+  const qrBuf = await QRCode.toBuffer(qrUrl, {
+    width,
+    margin: 1,
+    type: 'png',
+    color: { dark: COMPANY.navy, light: '#ffffff' },
+  });
+
+  qrBufferCache.set(cacheKey, qrBuf);
+
+  if (qrBufferCache.size > 250) {
+    const firstKey = qrBufferCache.keys().next().value;
+    qrBufferCache.delete(firstKey);
+  }
+
+  return qrBuf;
+}
 
 function fmtCur(n, cur = 'MXN') {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: cur || 'MXN' }).format(Number(n) || 0);
@@ -34,11 +69,12 @@ function escXml(s) {
    PDF
 ════════════════════════════════════════ */
 async function generateQuotePDF(quote) {
-  const BASE_URL   = COMPANY.BASE_URL;
-  const LOGOS_PATH = path.join(__dirname, '../../web/public/assets/LOGOS.png');
-  const LADA_PATH  = path.join(__dirname, '../../web/public/assets/lada.png');
+  // Resuelve el QR ANTES de arrancar el build síncrono del PDF
+  const [qrBuf] = await Promise.all([
+    getQrBuffer(quote.public_token, 72),
+  ]);
 
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
         size: 'LETTER',
@@ -52,7 +88,7 @@ async function generateQuotePDF(quote) {
 
       const W    = doc.page.width;
       const H    = doc.page.height;
-      const PL   = 40, PR = 40;
+      const PL   = 28, PR = 28;
       const CW   = W - PL - PR;
       const navy = COMPANY.navy;
       const teal = COMPANY.teal;
@@ -60,96 +96,202 @@ async function generateQuotePDF(quote) {
       const client = quote.client || quote.client_snapshot || {};
       const items  = quote.items  || [];
 
-      /* ══ HEADER ══ */
-      let y = 24;
-
-      if (fs.existsSync(LOGO_PATH)) {
-        doc.image(LOGO_PATH, PL, y, { width: 56, height: 56 });
-      }
-
-      doc.font('Helvetica-Bold').fontSize(13).fillColor(navy)
-         .text(COMPANY.name, PL + 64, y + 4);
-      doc.font('Helvetica').fontSize(7).fillColor('#475569')
-         .text(COMPANY.full,    PL + 64, y + 20)
-         .text(COMPANY.address, PL + 64, y + 30, { width: 180 });
-
-      const folioBoxX = W - PR - 90;
-      doc.rect(folioBoxX, y, 90, 14).fill(navy);
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#ffffff')
-         .text('FOLIO', folioBoxX, y + 3, { width: 90, align: 'center' });
-      doc.rect(folioBoxX, y + 14, 90, 24).fill('#f8fafc')
-         .strokeColor('#e2e8f0').lineWidth(0.5).stroke();
-      doc.font('Helvetica-Bold').fontSize(11).fillColor(navy)
-         .text(quote.folio || '0000000', folioBoxX, y + 19, { width: 90, align: 'center' });
-
-      y += 64;
-      doc.rect(PL, y, CW, 1).fill(navy);
-      y += 10;
-
-      doc.font('Helvetica-Bold').fontSize(16).fillColor('#0f172a')
-         .text('COTIZACIÓN', PL, y, { width: CW, align: 'center' });
-      y += 24;
-
-      /* ══ FECHA BOXES ══ */
-      const bw = 90, bh = 32, bGap = 10;
-      const totalBoxW = bw + bGap + bw + 10;
-      const boxStartX = (W - totalBoxW) / 2;
-
-      doc.rect(boxStartX, y, bw, 14).fill(navy);
-      doc.font('Helvetica-Bold').fontSize(7).fillColor('#ffffff')
-         .text('FECHA', boxStartX, y + 3, { width: bw, align: 'center' });
-      doc.rect(boxStartX, y + 14, bw, bh - 14).fill('#f8fafc');
-      doc.rect(boxStartX, y + 14, bw, bh - 14).lineWidth(0.5).strokeColor('#e2e8f0').stroke();
-      doc.font('Helvetica').fontSize(9).fillColor('#0f172a')
-         .text(fmtDate(quote.created_at), boxStartX, y + 18, { width: bw, align: 'center' });
-
-      const vhX = boxStartX + bw + bGap;
-      doc.rect(vhX, y, bw + 10, 14).fill(navy);
-      doc.font('Helvetica-Bold').fontSize(7).fillColor('#ffffff')
-         .text('VÁLIDA HASTA', vhX, y + 3, { width: bw + 10, align: 'center' });
-      doc.rect(vhX, y + 14, bw + 10, bh - 14).fill('#f8fafc');
-      doc.rect(vhX, y + 14, bw + 10, bh - 14).lineWidth(0.5).strokeColor('#e2e8f0').stroke();
-      doc.font('Helvetica').fontSize(9).fillColor('#0f172a')
-         .text(fmtDate(quote.valid_until), vhX, y + 18, { width: bw + 10, align: 'center' });
-
-      y += bh + 12;
-      doc.rect(PL, y, CW, 0.5).fill('#e2e8f0');
-      y += 12;
-
-      /* ══ EMISOR / RECEPTOR ══ */
       const colW = CW / 2 - 10;
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(teal)
-         .text('EMISOR', PL, y)
-         .text('RECEPTOR', PL + colW + 20, y);
-      y += 11;
-      doc.rect(PL, y, colW, 0.6).fill(teal);
-      doc.rect(PL + colW + 20, y, colW, 0.6).fill(teal);
-      y += 7;
-
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a').text(COMPANY.name, PL, y);
-      doc.font('Helvetica').fontSize(8).fillColor('#475569')
-         .text(COMPANY.full,    PL, y + 13)
-         .text(COMPANY.address, PL, y + 23, { width: colW })
-         .text(`Tel: ${COMPANY.phone}`, PL, y + 41);
-
       const recX = PL + colW + 20;
-      if (client.name) {
-        doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a').text(client.name, recX, y);
-        let cy = y + 13;
+
+      const FIXED_SIG_TOP    = H - 174;
+      const FIXED_FOOTER_TOP = H - 96;
+      const BODY_BOTTOM      = FIXED_SIG_TOP - 10;
+      function drawStaticPageFrame() {
+        let yy = 24;
+
+        if (LOGO_BUFFER) {
+          doc.image(LOGO_BUFFER, PL, yy, { width: 56, height: 56 });
+        }
+
+        doc.font('Helvetica-Bold').fontSize(13).fillColor(navy)
+           .text(COMPANY.name, PL + 64, yy + 4);
+        doc.font('Helvetica').fontSize(7).fillColor('#475569')
+           .text(COMPANY.full,    PL + 64, yy + 20)
+           .text(COMPANY.address, PL + 64, yy + 30, { width: 180 });
+
+        const folioBoxX = W - PR - 90;
+        doc.rect(folioBoxX, yy, 90, 14).fill(navy);
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#ffffff')
+           .text('FOLIO', folioBoxX, yy + 3, { width: 90, align: 'center' });
+        doc.rect(folioBoxX, yy + 14, 90, 24).fill('#f8fafc')
+           .strokeColor('#e2e8f0').lineWidth(0.5).stroke();
+        doc.font('Helvetica-Bold').fontSize(11).fillColor(navy)
+           .text(quote.folio || '0000000', folioBoxX, yy + 19, { width: 90, align: 'center' });
+
+        yy += 54;
+        doc.rect(PL, yy, CW, 1).fill(navy);
+        yy += 8;
+
+        doc.font('Helvetica-Bold').fontSize(16).fillColor('#0f172a')
+           .text('COTIZACIÓN', PL, yy, { width: CW, align: 'center' });
+        yy += 18;
+
+        const bw = 90, bh = 32, bGap = 10;
+        const totalBoxW = bw + bGap + bw + 10;
+        const boxStartX = (W - totalBoxW) / 2;
+
+        doc.rect(boxStartX, yy, bw, 14).fill(navy);
+        doc.font('Helvetica-Bold').fontSize(7).fillColor('#ffffff')
+           .text('FECHA', boxStartX, yy + 3, { width: bw, align: 'center' });
+        doc.rect(boxStartX, yy + 14, bw, bh - 14).fill('#f8fafc');
+        doc.rect(boxStartX, yy + 14, bw, bh - 14).lineWidth(0.5).strokeColor('#e2e8f0').stroke();
+        doc.font('Helvetica').fontSize(9).fillColor('#0f172a')
+           .text(fmtDate(quote.created_at), boxStartX, yy + 18, { width: bw, align: 'center' });
+
+        const vhX = boxStartX + bw + bGap;
+        doc.rect(vhX, yy, bw + 10, 14).fill(navy);
+        doc.font('Helvetica-Bold').fontSize(7).fillColor('#ffffff')
+           .text('VÁLIDA HASTA', vhX, yy + 3, { width: bw + 10, align: 'center' });
+        doc.rect(vhX, yy + 14, bw + 10, bh - 14).fill('#f8fafc');
+        doc.rect(vhX, yy + 14, bw + 10, bh - 14).lineWidth(0.5).strokeColor('#e2e8f0').stroke();
+        doc.font('Helvetica').fontSize(9).fillColor('#0f172a')
+           .text(fmtDate(quote.valid_until), vhX, yy + 18, { width: bw + 10, align: 'center' });
+
+        yy += bh + 12;
+        doc.rect(PL, yy, CW, 0.5).fill('#e2e8f0');
+        yy += 12;
+
+        doc.font('Helvetica-Bold').fontSize(9).fillColor(teal)
+           .text('EMISOR', PL, yy)
+           .text('RECEPTOR', PL + colW + 20, yy);
+        yy += 11;
+        doc.rect(PL, yy, colW, 0.6).fill(teal);
+        doc.rect(PL + colW + 20, yy, colW, 0.6).fill(teal);
+        yy += 7;
+
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a').text(COMPANY.name, PL, yy);
+        doc.font('Helvetica').fontSize(8).fillColor('#475569')
+           .text(COMPANY.full,    PL, yy + 13)
+           .text(COMPANY.address, PL, yy + 23, { width: colW })
+           .text(`Tel: ${COMPANY.phone}`, PL, yy + 41);
+
+        if (client.name) {
+          doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a').text(client.name, recX, yy);
+          let cy = yy + 13;
+          [
+            client.company ? `Empresa: ${client.company}` : null,
+            client.rfc     ? `RFC: ${client.rfc}`         : null,
+            client.address ? client.address               : null,
+            client.phone   ? `Tel: ${client.phone}`       : null,
+            client.email   ? client.email                 : null,
+          ].filter(Boolean).forEach(l => {
+            doc.font('Helvetica').fontSize(8).fillColor('#475569').text(l, recX, cy, { width: colW });
+            cy += 12;
+          });
+        } else {
+          doc.font('Helvetica-Bold').fontSize(10).fillColor('#94a3b8').text('DATOS DEL CLIENTE', recX, yy);
+        }
+
+        const sigY = FIXED_SIG_TOP;
+        const sw = CW / 2 - 24;
+        const lineLen = 100;
+
+        const sig1CenterX = PL + sw / 2 + PL / 2;
+        doc.rect(sig1CenterX - lineLen / 2, sigY + 28, lineLen, 0.7).fill('#94a3b8');
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a')
+           .text(COMPANY.name, PL, sigY + 33, { width: sw + PL, align: 'center' });
+
+        if (quote.signer_name && quote.signer_name.trim()) {
+          doc.font('Helvetica-Bold').fontSize(8).fillColor(navy)
+             .text(quote.signer_name, PL, sigY + 44, { width: sw + PL, align: 'center' });
+          let signerY = sigY + 55;
+          if (quote.signer_title && quote.signer_title.trim()) {
+            doc.font('Helvetica').fontSize(7.5).fillColor('#475569')
+               .text(quote.signer_title, PL, signerY, { width: sw + PL, align: 'center' });
+            signerY += 11;
+          }
+          if (quote.signer_phone && quote.signer_phone.trim()) {
+            doc.font('Helvetica').fontSize(7.5).fillColor('#475569')
+               .text(`Tel. ${quote.signer_phone}`, PL, signerY, { width: sw + PL, align: 'center' });
+          }
+        } else {
+          doc.font('Helvetica').fontSize(7).fillColor('#94a3b8')
+             .text('Autorizado por', PL, sigY + 44, { width: sw + PL, align: 'center' });
+        }
+
+        const sigRX = PL + colW + 20;
+        const sig2CenterX = sigRX + colW / 2;
+        doc.rect(sig2CenterX - lineLen / 2, sigY + 28, lineLen, 0.7).fill('#94a3b8');
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a')
+           .text(client.name || 'Cliente', sigRX, sigY + 33, { width: colW, align: 'center' });
+        doc.font('Helvetica').fontSize(7).fillColor('#94a3b8')
+           .text('Aceptado por', sigRX, sigY + 44, { width: colW, align: 'center' });
+
+        const footerY = FIXED_FOOTER_TOP;
+        const qrSize = 60;
+
+        if (qrBuf) {
+          doc.image(qrBuf, PL, footerY, { width: qrSize, height: qrSize });
+        }
+
+        const icX   = PL + qrSize + 14;
+        const icY   = footerY + 2;
+        const icR   = 8;
+        const lineH = 19;
+
         [
-          client.company ? `Empresa: ${client.company}` : null,
-          client.rfc     ? `RFC: ${client.rfc}`         : null,
-          client.address ? client.address               : null,
-          client.phone   ? `Tel: ${client.phone}`       : null,
-          client.email   ? client.email                 : null,
-        ].filter(Boolean).forEach(l => { doc.font('Helvetica').fontSize(8).fillColor('#475569').text(l, recX, cy, { width: colW }); cy += 12; });
-      } else {
-        doc.font('Helvetica-Bold').fontSize(10).fillColor('#94a3b8').text('DATOS DEL CLIENTE', recX, y);
+          { label: COMPANY.phone,   type: 'phone'    },
+          { label: COMPANY.address, type: 'location' },
+          { label: COMPANY.web,     type: 'web'      },
+        ].forEach(({ label, type }, i) => {
+          const ly = icY + i * lineH;
+          const cx = icX + icR;
+          const cy = ly + icR;
+
+          doc.circle(cx, cy, icR).fill(teal);
+
+          if (type === 'phone') {
+            doc.circle(cx, cy, icR).fill(teal);
+            doc.moveTo(cx - 3, cy + 3).quadraticCurveTo(cx - 4, cy - 1, cx - 1, cy - 3)
+               .quadraticCurveTo(cx + 2, cy - 5, cx + 3, cy - 3).lineWidth(1.4).strokeColor('#ffffff').stroke();
+            doc.moveTo(cx - 3, cy + 3).lineTo(cx - 1.5, cy + 1.5).lineWidth(1.4).strokeColor('#ffffff').stroke();
+            doc.moveTo(cx + 3, cy - 3).lineTo(cx + 1.5, cy - 1.5).lineWidth(1.4).strokeColor('#ffffff').stroke();
+          } else if (type === 'location') {
+            doc.circle(cx, cy - 1.5, 2.8).fillAndStroke(teal, '#ffffff');
+            doc.moveTo(cx - 2, cy + 0.5).quadraticCurveTo(cx, cy + 5, cx, cy + 5)
+               .quadraticCurveTo(cx, cy + 5, cx + 2, cy + 0.5).lineWidth(1.2).strokeColor('#ffffff').stroke();
+          } else {
+            doc.circle(cx, cy, 4).lineWidth(1.1).strokeColor('#ffffff').stroke();
+            doc.moveTo(cx - 4, cy).lineTo(cx + 4, cy).stroke();
+            doc.moveTo(cx, cy - 4).lineTo(cx, cy + 4).stroke();
+            doc.ellipse(cx, cy, 2, 4).stroke();
+          }
+
+          doc.font('Helvetica').fontSize(7.5).fillColor('#475569')
+             .text(label, icX + icR * 2 + 5, ly + icR - 4, {
+               width: CW - qrSize - icR * 2 - 20,
+             });
+        });
+
+        const logosY = footerY + qrSize - 2;
+        if (LOGOS_BUFFER) {
+          doc.image(LOGOS_BUFFER, PL, logosY, { height: 24, fit: [145, 24] });
+        }
+        if (LADA_BUFFER) {
+          doc.image(LADA_BUFFER, W - PR - 150, logosY, { height: 24, fit: [150, 24] });
+        }
+
+        yy += 58;
+        doc.rect(PL, yy, CW, 0.5).fill('#e2e8f0');
+        yy += 12;
+
+        return yy;
       }
 
-      y += 58;
-      doc.rect(PL, y, CW, 0.5).fill('#e2e8f0');
-      y += 12;
+      let y = drawStaticPageFrame();
+
+      function ensurePageSpace(spaceNeeded = 24) {
+        if (y + spaceNeeded > BODY_BOTTOM) {
+          doc.addPage();
+          y = drawStaticPageFrame();
+        }
+      }
 
       /* ══ A QUIEN CORRESPONDA ══ */
       doc.font('Helvetica-Bold').fontSize(10).fillColor(navy).text('A QUIEN CORRESPONDA', PL, y);
@@ -159,22 +301,20 @@ async function generateQuotePDF(quote) {
         ? quote.intro_text
         : `Por este conducto me permito presentarle la cotización de ${quote.title || 'nuestros servicios'}${client.name ? ` para ${client.name}` : ''}.`;
       doc.font('Helvetica').fontSize(8.5).fillColor('#475569').text(introText, PL, y, { width: CW });
-      y += doc.heightOfString(introText, { width: CW }) + 14;
+      y += doc.heightOfString(introText, { width: CW }) + 8;
 
       doc.rect(PL, y, CW, 0.5).fill('#e2e8f0');
-      y += 12;
-
+      y += 10;
       /* ══ TÍTULO ══ */
       doc.font('Helvetica-Bold').fontSize(13).fillColor('#0f172a')
          .text((quote.title || 'Cotización').toUpperCase(), PL, y);
-      y += 20;
+      y += 14;
 
       /* ══ TABLA ══ */
       const COLS  = [0.34, 0.12, 0.10, 0.14, 0.10, 0.20].map(p => Math.floor(p * CW));
       const HEADS = ['CONCEPTO', 'UNIDAD', 'CANT.', 'P. UNIT.', 'DESC. %', 'TOTAL'];
-      const RH    = 18;
+      const RH    = 16;
       const TW    = COLS.reduce((a, b) => a + b, 0);
-
       doc.rect(PL, y, TW, RH).fill(navy);
       let xp = PL;
       HEADS.forEach((h, i) => {
@@ -185,9 +325,15 @@ async function generateQuotePDF(quote) {
       const tableTop = y;
       y += RH;
 
-      items.forEach((it, idx) => {
-        if (y + RH > H - 150) {
-          doc.addPage(); y = 40;
+items.forEach((it, idx) => {
+        // Calcula la altura real que necesita el texto de descripción
+        const descH = doc.font('Helvetica-Bold').fontSize(8)
+          .heightOfString(it.description || '', { width: COLS[0] - 8 });
+        const rowH = Math.max(RH, descH + 6);
+        if (y + rowH > BODY_BOTTOM) {
+          doc.addPage();
+          y = drawStaticPageFrame();
+
           doc.rect(PL, y, TW, RH).fill(navy);
           xp = PL;
           HEADS.forEach((h, i) => {
@@ -197,8 +343,8 @@ async function generateQuotePDF(quote) {
           });
           y += RH;
         }
-        doc.rect(PL, y, TW, RH).fill(idx % 2 === 0 ? '#f8fafc' : '#ffffff');
-        doc.rect(PL, y + RH - 0.4, TW, 0.4).fill('#e2e8f0');
+        doc.rect(PL, y, TW, rowH).fill(idx % 2 === 0 ? '#f8fafc' : '#ffffff');
+        doc.rect(PL, y + rowH - 0.4, TW, 0.4).fill('#e2e8f0');
         xp = PL;
         [
           it.description || '',
@@ -208,13 +354,16 @@ async function generateQuotePDF(quote) {
           Number(it.discount_pct || 0) > 0 ? `${Number(it.discount_pct).toFixed(0)}%` : '—',
           fmtCur(it.amount, quote.currency),
         ].forEach((c, i) => {
+          // Descripción: permite saltos de línea y se centra verticalmente
+          // Resto de columnas: una sola línea, centradas verticalmente
+          const textY = i === 0 ? y + 5 : y + (rowH - 8) / 2;
           doc.font(i === 0 ? 'Helvetica-Bold' : 'Helvetica').fontSize(8)
              .fillColor(i === 0 ? '#0f172a' : '#475569')
-             .text(String(c), xp + 4, y + 5,
-               { width: COLS[i] - 8, align: i > 0 ? 'right' : 'left', lineBreak: false });
+             .text(String(c), xp + 4, textY,
+               { width: COLS[i] - 8, align: i > 0 ? 'right' : 'left', lineBreak: i === 0 });
           xp += COLS[i];
         });
-        y += RH;
+        y += rowH;
       });
 
       doc.rect(PL, tableTop, TW, y - tableTop).lineWidth(0.5).strokeColor('#cbd5e1').stroke();
@@ -271,7 +420,7 @@ async function generateQuotePDF(quote) {
       doc.font('Helvetica-Bold').fontSize(9).fillColor('#ffffff').text('TOTAL:', totX + 6, y + 7);
       doc.font('Helvetica-Bold').fontSize(12).fillColor('#ffffff')
          .text(fmtCur(quote.total, quote.currency), totX, y + 6, { width: totW - 6, align: 'right' });
-      y += 32;
+      y += 24;
 
       /* ══ TÉRMINOS / NOTAS ══ */
       if (quote.terms || quote.notes) {
@@ -294,109 +443,21 @@ async function generateQuotePDF(quote) {
       const closingText = (quote.closing_text && quote.closing_text.trim())
         ? quote.closing_text
         : 'Sin más por el momento y en espera de poder servirles, quedamos a sus órdenes.';
-      doc.font('Helvetica').fontSize(8.5).fillColor('#475569').text(closingText, PL, y, { width: CW });
-      y += doc.heightOfString(closingText, { width: CW }) + 6;
-      doc.font('Helvetica-Bold').fontSize(9).fillColor(navy).text('ATENTAMENTE.', PL, y);
+
+      const closingNeeded =
+        doc.heightOfString(closingText, { width: CW }) + 16;
+
+      ensurePageSpace(closingNeeded);
+
+      doc.font('Helvetica').fontSize(8.5).fillColor('#475569')
+         .text(closingText, PL, y, { width: CW });
+      y += doc.heightOfString(closingText, { width: CW }) + 4;
+
+      ensurePageSpace(12);
+
+      doc.font('Helvetica-Bold').fontSize(9).fillColor(navy)
+         .text('ATENTAMENTE.', PL, y);
       y += 20;
-
-      /* ══ FIRMAS ══ */
-      const FOOTER_H = 130;
-      const FIRM_H   = 76;
-      if (y + FIRM_H + FOOTER_H > H) { doc.addPage(); y = 40; }
-
-      y += 10;
-      const sw      = CW / 2 - 24;
-      const lineLen = 100;
-
-      // Firma izquierda — ECOVISA + firmante
-      const sig1CenterX = PL + sw / 2 + PL / 2;
-      doc.rect(sig1CenterX - lineLen / 2, y + 28, lineLen, 0.7).fill('#94a3b8');
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a')
-         .text(COMPANY.name, PL, y + 33, { width: sw + PL, align: 'center' });
-
-      if (quote.signer_name && quote.signer_name.trim()) {
-        doc.font('Helvetica-Bold').fontSize(8).fillColor(navy)
-           .text(quote.signer_name, PL, y + 44, { width: sw + PL, align: 'center' });
-        let sigY = y + 55;
-        if (quote.signer_title && quote.signer_title.trim()) {
-          doc.font('Helvetica').fontSize(7.5).fillColor('#475569')
-             .text(quote.signer_title, PL, sigY, { width: sw + PL, align: 'center' });
-          sigY += 11;
-        }
-        if (quote.signer_phone && quote.signer_phone.trim()) {
-          doc.font('Helvetica').fontSize(7.5).fillColor('#475569')
-             .text(`Tel. ${quote.signer_phone}`, PL, sigY, { width: sw + PL, align: 'center' });
-        }
-      } else {
-        doc.font('Helvetica').fontSize(7).fillColor('#94a3b8')
-           .text('Autorizado por', PL, y + 44, { width: sw + PL, align: 'center' });
-      }
-
-      // Firma derecha — Cliente
-      const sigRX       = PL + colW + 20;
-      const sig2CenterX = sigRX + colW / 2;
-      doc.rect(sig2CenterX - lineLen / 2, y + 28, lineLen, 0.7).fill('#94a3b8');
-      doc.font('Helvetica-Bold').fontSize(8).fillColor('#0f172a')
-         .text(client.name || 'Cliente', sigRX, y + 33, { width: colW, align: 'center' });
-      doc.font('Helvetica').fontSize(7).fillColor('#94a3b8')
-         .text('Aceptado por', sigRX, y + 44, { width: colW, align: 'center' });
-
-      /* ══ FOOTER — QR + contacto + logos ══ */
-      const FY      = H - FOOTER_H;
-      const qrUrl   = `${BASE_URL}/cotizacion/${quote.public_token}`;
-      const qrData  = await QRCode.toDataURL(qrUrl, {
-        width: 72, margin: 1, color: { dark: navy, light: '#ffffff' },
-      });
-      const qrBuf   = Buffer.from(qrData.split(',')[1], 'base64');
-      const qrSize  = 60;
-      doc.image(qrBuf, PL, FY + 8, { width: qrSize, height: qrSize });
-
-      const icX  = PL + qrSize + 14;
-      const icY  = FY + 10;
-      const icR  = 8;
-      const lineH = 19;
-
-      [
-        { label: COMPANY.phone,   type: 'phone'    },
-        { label: COMPANY.address, type: 'location' },
-        { label: COMPANY.web,     type: 'web'      },
-      ].forEach(({ label, type }, i) => {
-        const ly = icY + i * lineH;
-        const cx = icX + icR;
-        const cy = ly + icR;
-
-        doc.circle(cx, cy, icR).fill(teal);
-
-        if (type === 'phone') {
-          doc.circle(cx, cy, icR).fill(teal);
-          doc.moveTo(cx - 3, cy + 3).quadraticCurveTo(cx - 4, cy - 1, cx - 1, cy - 3)
-             .quadraticCurveTo(cx + 2, cy - 5, cx + 3, cy - 3).lineWidth(1.4).strokeColor('#ffffff').stroke();
-          doc.moveTo(cx - 3, cy + 3).lineTo(cx - 1.5, cy + 1.5).lineWidth(1.4).strokeColor('#ffffff').stroke();
-          doc.moveTo(cx + 3, cy - 3).lineTo(cx + 1.5, cy - 1.5).lineWidth(1.4).strokeColor('#ffffff').stroke();
-        } else if (type === 'location') {
-          doc.circle(cx, cy - 1.5, 2.8).fillAndStroke(teal, '#ffffff');
-          doc.moveTo(cx - 2, cy + 0.5).quadraticCurveTo(cx, cy + 5, cx, cy + 5)
-             .quadraticCurveTo(cx, cy + 5, cx + 2, cy + 0.5).lineWidth(1.2).strokeColor('#ffffff').stroke();
-        } else {
-          doc.circle(cx, cy, 4).lineWidth(1.1).strokeColor('#ffffff').stroke();
-          doc.moveTo(cx - 4, cy).lineTo(cx + 4, cy).stroke();
-          doc.moveTo(cx, cy - 4).lineTo(cx, cy + 4).stroke();
-          doc.ellipse(cx, cy, 2, 4).stroke();
-        }
-
-        doc.font('Helvetica').fontSize(7.5).fillColor('#475569')
-           .text(label, icX + icR * 2 + 5, ly + icR - 4,
-             { width: CW - qrSize - icR * 2 - 20 });
-      });
-
-      // Fila inferior: LOGOS.png (izq) + lada.png (der)
-      const logoRowY = H - 38;
-      if (fs.existsSync(LOGOS_PATH)) {
-        doc.image(LOGOS_PATH, PL, logoRowY, { height: 30, fit: [150, 30] });
-      }
-      if (fs.existsSync(LADA_PATH)) {
-        doc.image(LADA_PATH, W - PR - 160, logoRowY, { height: 30, fit: [160, 30] });
-      }
 
       doc.end();
     } catch (e) {
@@ -410,9 +471,8 @@ async function generateQuotePDF(quote) {
    EXCEL
 ════════════════════════════════════════ */
 async function generateQuoteExcel(quote) {
-  const BASE_URL   = COMPANY.BASE_URL;
-  const LOGOS_PATH = path.join(__dirname, '../../web/public/assets/LOGOS.png');
-  const LADA_PATH  = path.join(__dirname, '../../web/public/assets/lada.png');
+  // Resuelve el QR ANTES de construir el workbook
+  const qrBuf = await getQrBuffer(quote.public_token, 80);
 
   const wb = new ExcelJS.Workbook();
   wb.creator = COMPANY.name;
@@ -460,9 +520,8 @@ async function generateQuoteExcel(quote) {
   let row = 1;
 
   /* ── Logo ── */
-  if (fs.existsSync(LOGO_PATH)) {
-    const logoData = fs.readFileSync(LOGO_PATH);
-    const logoId   = wb.addImage({ buffer: logoData, extension: 'png' });
+  if (LOGO_BUFFER) {
+    const logoId = wb.addImage({ buffer: LOGO_BUFFER, extension: 'png' });
     ws.addImage(logoId, { tl: { col: 0.1, row: 0.1 }, br: { col: 1.0, row: 3.8 }, editAs: 'oneCell' });
   }
 
@@ -619,10 +678,15 @@ async function generateQuoteExcel(quote) {
   row++;
 
   /* ── Items ── */
-  items.forEach((it, idx) => {
-    ws.getRow(row).height = 18;
+items.forEach((it, idx) => {
+    // Estima líneas necesarias (columna B tiene width 28 ≈ ~42 chars por línea a tamaño 9)
+    const desc = String(it.description || '');
+    const charsPerLine = 38;
+    const lines = Math.max(1, Math.ceil(desc.length / charsPerLine));
+    ws.getRow(row).height = Math.max(18, lines * 14 + 6);
+
     const r = ws.getRow(row);
-    r.values = [idx + 1, it.description || '', it.unit || 'pieza',
+    r.values = [idx + 1, desc, it.unit || 'pieza',
       Number(it.quantity || 0), Number(it.unit_price || 0),
       Number(it.discount_pct || 0), Number(it.amount || 0)];
     const bg = idx % 2 === 0 ? LIGHT : WHITE;
@@ -630,7 +694,7 @@ async function generateQuoteExcel(quote) {
     r.getCell(1).font = { size: 8, color: { argb: LGRAY } };
     r.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     r.getCell(2).font = { bold: true, size: 9, color: { argb: DARK } };
-    r.getCell(2).alignment = { vertical: 'middle' };
+    r.getCell(2).alignment = { vertical: 'middle', wrapText: true }; // ← wrapText activado
     r.getCell(3).font = { size: 9, color: { argb: GRAY } };
     r.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
     r.getCell(4).numFmt = '#,##0.00'; r.getCell(4).alignment = { horizontal: 'right', vertical: 'middle' };
@@ -784,13 +848,13 @@ async function generateQuoteExcel(quote) {
 
   ws.getRow(row).height = 8; merge(row, 'A', 'G'); fill(gc(row, 'A'), BGSEP); row++;
 
-  /* ── Footer: QR + contacto ── */
-  const qrUrl  = `${BASE_URL}/cotizacion/${quote.public_token}`;
-  const qrData = await QRCode.toDataURL(qrUrl, { width: 80, margin: 1, color: { dark: COMPANY.navy, light: '#ffffff' } });
-  const qrBuf  = Buffer.from(qrData.split(',')[1], 'base64');
-  const qrId   = wb.addImage({ buffer: qrBuf, extension: 'png' });
+/* ── Footer: QR + contacto ── */
   const qrStartRow = row - 1;
-  ws.addImage(qrId, { tl: { col: 0.1, row: qrStartRow }, br: { col: 1.0, row: qrStartRow + 5 }, editAs: 'oneCell' });
+
+  if (qrBuf) {
+    const qrId = wb.addImage({ buffer: qrBuf, extension: 'png' });
+    ws.addImage(qrId, { tl: { col: 0.1, row: qrStartRow }, br: { col: 1.0, row: qrStartRow + 5 }, editAs: 'oneCell' });
+  }
 
   [`Tel: ${COMPANY.phone}`, COMPANY.address, COMPANY.web,
    'Escanea el QR para ver la cotización en línea'].forEach(txt => {
@@ -808,9 +872,8 @@ async function generateQuoteExcel(quote) {
   /* ── Logos inferiores ── */
   ws.getRow(row).height = 6; row++;
 
-  if (fs.existsSync(LOGOS_PATH)) {
-    const logosData = fs.readFileSync(LOGOS_PATH);
-    const logosId   = wb.addImage({ buffer: logosData, extension: 'png' });
+  if (LOGOS_BUFFER) {
+    const logosId = wb.addImage({ buffer: LOGOS_BUFFER, extension: 'png' });
     ws.addImage(logosId, {
       tl: { col: 0.1, row: row - 1 },
       br: { col: 3.0, row: row + 3 },
@@ -818,9 +881,8 @@ async function generateQuoteExcel(quote) {
     });
   }
 
-  if (fs.existsSync(LADA_PATH)) {
-    const ladaData = fs.readFileSync(LADA_PATH);
-    const ladaId   = wb.addImage({ buffer: ladaData, extension: 'png' });
+  if (LADA_BUFFER) {
+    const ladaId = wb.addImage({ buffer: LADA_BUFFER, extension: 'png' });
     ws.addImage(ladaId, {
       tl: { col: 4.0, row: row - 1 },
       br: { col: 7.0, row: row + 3 },
