@@ -15,13 +15,35 @@ export default function QuoteDetailModal({ quote, worker, onClose, onUpdated, on
   const [rejectReason,   setRejectReason]  = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
 
-  const status     = QUOTE_STATUSES[quote.status] || QUOTE_STATUSES.draft;
-  const canEdit    = quote.status === 'draft';
-  const canSend    = quote.status === 'draft';
-  const canApproveBtn = canApprove && quote.status === 'sent';
-  const canRejectBtn  = canApprove && quote.status === 'sent';
-  const canReopen  = quote.status === 'rejected';
-  const client     = quote.client || quote.client_snapshot || {};
+  const quoteStatus = String(quote?.status || 'draft').toLowerCase();
+
+  const status =
+    QUOTE_STATUSES?.[quoteStatus] ||
+    QUOTE_STATUSES?.draft ||
+    {
+      label: quoteStatus === 'sent'
+        ? 'Enviada'
+        : quoteStatus === 'approved'
+        ? 'Aprobada'
+        : quoteStatus === 'rejected'
+        ? 'Rechazada'
+        : quoteStatus === 'cancelled'
+        ? 'Cancelada'
+        : quoteStatus === 'paid'
+        ? 'Pagada'
+        : quoteStatus === 'invoiced'
+        ? 'Facturada'
+        : quoteStatus === 'pending'
+        ? 'En espera'
+        : 'Borrador',
+    };
+
+  const canEdit       = quoteStatus === 'draft';
+  const canSend       = quoteStatus === 'draft';
+  const canApproveBtn = canApprove && quoteStatus === 'sent';
+  const canRejectBtn  = canApprove && quoteStatus === 'sent';
+  const canReopen     = quoteStatus === 'rejected';
+  const client        = quote?.client || quote?.client_snapshot || {};
 
 async function doAction(action, body = {}) {
   setLoading(true);
@@ -163,61 +185,109 @@ async function exportQuote(format) {
   }
 }
 
-  async function createServiceSheetFromQuote() {
-    try {
-      await apiFetch('/api/service-sheets', {
-        method: 'POST',
-        body: JSON.stringify({
-          client_id: quote.client_id || null,
-          client_name: client.name || '',
-          city: client.city || '',
-          location: client.address || '',
-          quantity: 1,
-          unit_price: Number(quote.total || 0),
-          total_price: Number(quote.total || 0),
-          delivery_date: quote.valid_until || null,
-          service_type: 'Servicio desde cotización',
-          status: 'pending',
-          notes: `Generado desde cotización ${quote.folio || ''}`,
-          created_by: worker.id,
-          quote_id: quote.id,
-        }),
-      });
+async function createServiceSheetFromQuote() {
+  try {
+    await apiFetch('/api/service-sheets', {
+      method: 'POST',
+      body: JSON.stringify({
+        client_id: quote.client_id || null,
+        client_name: client.name || '',
+        city: client.city || '',
+        location: client.address || '',
+        quantity: 1,
+        unit_price: Number(quote.total || 0),
+        total_price: Number(quote.total || 0),
+        delivery_date: quote.valid_until || null,
+        service_type: 'Servicio desde cotización',
+        status: 'pending',
+        notes: `Generado desde cotización ${quote.folio || ''}`,
+        created_by: worker.id,
+        quote_id: quote.id,
+      }),
+    });
 
-      alert('Hoja de servicio creada correctamente');
-    } catch (e) {
-      alert(e.message || 'Error al crear hoja de servicio');
-    }
+    await Swal.fire({
+      iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#f0fdf4;border:2px solid #86efac;display:flex;align-items:center;justify-content:center;color:#16a34a"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>',
+      title: 'Hoja de servicio creada',
+      customClass: {
+        icon: 'swal-no-border',
+        popup: 'swal-quote-popup',
+        title: 'swal-quote-title',
+      },
+      buttonsStyling: false,
+      timer: 1400,
+      showConfirmButton: false,
+    });
+
+  } catch (e) {
+    await Swal.fire({
+      iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#fef2f2;border:2px solid #fca5a5;display:flex;align-items:center;justify-content:center;color:#dc2626"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>',
+      title: 'Error',
+      text: e.message || 'No se pudo crear la hoja de servicio',
+      customClass: {
+        icon: 'swal-no-border',
+        popup: 'swal-quote-popup',
+        title: 'swal-quote-title',
+        confirmButton: 'swal-quote-confirm',
+      },
+      buttonsStyling: false,
+      confirmButtonText: 'Entendido',
+    });
   }
+}
 
-  async function createInvoiceFromQuote() {
-    try {
-      const subtotal = Number(quote.subtotal || 0);
-      const tax = Number(quote.tax_amount || 0);
-      const total = Number(quote.total || 0);
+async function createInvoiceFromQuote() {
+  try {
+    const subtotal = Number(quote.subtotal || 0);
+    const tax = Number(quote.tax_amount || 0);
+    const total = Number(quote.total || 0);
 
-      await apiFetch('/api/invoices', {
-        method: 'POST',
-        body: JSON.stringify({
-          client_id: quote.client_id || null,
-          client_name: client.name || '',
-          quote_id: quote.id,
-          service_location: client.address || '',
-          delivery_date: quote.valid_until || null,
-          subtotal,
-          tax,
-          total,
-          status: 'draft',
-          notes: `Factura generada desde cotización ${quote.folio || ''}`,
-          created_by: worker.id,
-        }),
-      });
+    await apiFetch('/api/invoices', {
+      method: 'POST',
+      body: JSON.stringify({
+        client_id: quote.client_id || null,
+        client_name: client.name || '',
+        quote_id: quote.id,
+        service_location: client.address || '',
+        delivery_date: quote.valid_until || null,
+        subtotal,
+        tax,
+        total,
+        status: 'draft',
+        notes: `Factura generada desde cotización ${quote.folio || ''}`,
+        created_by: worker.id,
+      }),
+    });
 
-      alert('Factura creada correctamente');
-    } catch (e) {
-      alert(e.message || 'Error al crear factura');
-    }
+    await Swal.fire({
+      iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#f0fdf4;border:2px solid #86efac;display:flex;align-items:center;justify-content:center;color:#16a34a"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>',
+      title: 'Factura creada correctamente',
+      customClass: {
+        icon: 'swal-no-border',
+        popup: 'swal-quote-popup',
+        title: 'swal-quote-title',
+      },
+      buttonsStyling: false,
+      timer: 1400,
+      showConfirmButton: false,
+    });
+
+  } catch (e) {
+    await Swal.fire({
+      iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#fef2f2;border:2px solid #fca5a5;display:flex;align-items:center;justify-content:center;color:#dc2626"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>',
+      title: 'Error',
+      text: e.message || 'No se pudo crear la factura',
+      customClass: {
+        icon: 'swal-no-border',
+        popup: 'swal-quote-popup',
+        title: 'swal-quote-title',
+        confirmButton: 'swal-quote-confirm',
+      },
+      buttonsStyling: false,
+      confirmButtonText: 'Entendido',
+    });
   }
+}
 
   return (
     <div className="qt-modal-back" onMouseDown={onClose}>
@@ -226,8 +296,8 @@ async function exportQuote(format) {
         {/* Head */}
         <div className="qt-modal__head">
           <div className="qt-modal__title">
-            {quote.folio || 'Cotización'}
-            <span className={`qt-status qt-status--${quote.status}`}>{status.label}</span>
+            {quote?.folio || 'Cotización'}
+            <span className={`qt-status qt-status--${quoteStatus}`}>{status?.label || 'Borrador'}</span>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             {/* Exportar */}
@@ -388,14 +458,14 @@ async function exportQuote(format) {
           )}
 
           {/* Status info */}
-          {quote.status === 'approved' && (
+          {quoteStatus === 'approved' && (
             <div className="qt-section" style={{ borderColor: '#86efac', background: '#f0fdf4' }}>
               <p style={{ margin: 0, fontSize: 13, color: '#15803d', fontWeight: 700 }}>
-                ✓ Aprobada {quote.approver?.full_name ? `por ${quote.approver.full_name}` : ''} el {formatDate(quote.approved_at)}
+                ✓ Aprobada {quote?.approver?.full_name ? `por ${quote.approver.full_name}` : ''} el {formatDate(quote?.approved_at)}
               </p>
             </div>
           )}
-          {quote.status === 'rejected' && quote.rejection_reason && (
+          {quoteStatus === 'rejected' && quote?.rejection_reason && (
             <div className="qt-section" style={{ borderColor: '#fca5a5', background: '#fef2f2' }}>
               <p style={{ margin: 0, fontSize: 13, color: '#b91c1c', fontWeight: 700 }}>
                 Rechazada — {quote.rejection_reason}
@@ -404,7 +474,7 @@ async function exportQuote(format) {
           )}
 
           {/* Sin permiso de aprobar */}
-          {quote.status === 'sent' && !canApprove && (
+          {quoteStatus === 'sent' && !canApprove && (
             <div className="qt-section" style={{ borderColor: '#fcd34d', background: '#fffbeb' }}>
               <p style={{ margin: 0, fontSize: 13, color: '#92400e', fontWeight: 700 }}>
                 ⏳ Esta cotización está pendiente de aprobación por personal autorizado.

@@ -19,11 +19,14 @@ export default function ClientsCatalog({ worker }) {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (search.trim()) params.set('q', search.trim());
-      const resp = await apiFetch(`/api/quotes/clients?${params.toString()}`);
+      if (search.trim()) params.set("q", search.trim());
+      const resp = await apiFetch(`/api/clients?${params.toString()}`);
       setClients(resp?.data || []);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, [search]);
 
   useEffect(() => { load(); }, [load]);
@@ -53,13 +56,13 @@ export default function ClientsCatalog({ worker }) {
     setSaving(true);
     try {
       if (editing) {
-        await apiFetch(`/api/quotes/clients/${editing.id}`, {
-          method: 'PUT',
+        await apiFetch(`/api/clients/${editing.id}`, {
+          method: "PUT",
           body: JSON.stringify({ worker_id: worker?.id, ...form }),
         });
       } else {
-        await apiFetch('/api/quotes/clients', {
-          method: 'POST',
+        await apiFetch("/api/clients", {
+          method: "POST",
           body: JSON.stringify({ worker_id: worker?.id, ...form }),
         });
       }
@@ -84,7 +87,7 @@ export default function ClientsCatalog({ worker }) {
     });
     if (!res.isConfirmed) return;
     try {
-      await apiFetch(`/api/quotes/clients/${c.id}`, { method: 'DELETE' });
+            await apiFetch(`/api/clients/${c.id}`, { method: "DELETE" });
       load();
       Swal.fire({ icon: 'success', title: 'Eliminado', timer: 1200, showConfirmButton: false });
     } catch (e) { Swal.fire('Error', e.message, 'error'); }

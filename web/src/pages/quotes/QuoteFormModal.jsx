@@ -8,6 +8,7 @@ import {
 import Swal from 'sweetalert2';
 import { apiFetch } from '../../api';
 import ProSelect from '../../components/ProSelect/ProSelect';
+import ClientSelectPro from '../../components/ClientSelectPro';
 import MiniDatePicker from './MiniDatePicker';
 import {
   createEmptyItem, calculateTotals, calculateItemAmount, formatCurrency,
@@ -65,7 +66,6 @@ function ProductPicker({ anchorEl, onSelect, onClose }) {
 
   const getName  = it => it.name || it.product_name || it.service_name || it.title || '—';
   const getSku   = it => it.sku  || it.serial_number || it.code || it.service_code || '';
-  const getPrice = it => it.price ?? it.sale_price ?? it.unit_price ?? it.cost ?? 0;
   const getUnit  = it => it.unit || (tab === 'service' ? 'servicio' : 'pieza');
 
   return createPortal(
@@ -166,7 +166,6 @@ function ProductPicker({ anchorEl, onSelect, onClose }) {
             onClick={() => onSelect({
                 name:       getName(item),
                 unit:       getUnit(item),
-                unit_price: getPrice(item),
                 product_id: item.id || null,
               })}
             >
@@ -181,8 +180,8 @@ function ProductPicker({ anchorEl, onSelect, onClose }) {
                   </div>
                 )}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 900, color: '#16a34a', whiteSpace: 'nowrap' }}>
-                {formatCurrency(getPrice(item))}
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                {tab === 'product' ? 'Producto' : 'Servicio'}
               </div>
             </button>
           ))}
@@ -215,18 +214,12 @@ const [form, setForm] = useState({
   const [isDirty, setIsDirty] = useState(false);
   const [closing, setClosing] = useState(false);
 
-  const [clientSearch,   setClientSearch]   = useState('');
-  const [clientResults,  setClientResults]  = useState([]);
-  const [clientDropOpen, setClientDropOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
-  const [showNewClient,  setShowNewClient]  = useState(false);
-  const [newClient, setNewClient] = useState({ name:'', email:'', phone:'', company:'', rfc:'' });
 
   const [pickerOpenFor,  setPickerOpenFor]  = useState(null);
   const [pickerAnchor,   setPickerAnchor]   = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const clientRef     = useRef(null);
   const pickerBtnRefs = useRef({});
 
   /* ── init ── */
@@ -251,7 +244,7 @@ useEffect(() => {
     });
     if (quote.items?.length)
       setItems(quote.items.map((it, i) => ({ ...it, _id: it.id || `item_${i}` })));
-    if (quote.client) { setSelectedClient(quote.client); setClientSearch(quote.client.name); }
+    if (quote.client) setSelectedClient(quote.client);
     setIsDirty(false);
   }, [quote]);
 
@@ -259,29 +252,6 @@ useEffect(() => {
   useEffect(() => {
     setTotals(calculateTotals(items, form.tax_rate, form.discount_amount));
   }, [items, form.tax_rate, form.discount_amount]);
-
-  /* ── client search ── */
-  useEffect(() => {
-    if (!clientSearch.trim() || clientSearch === selectedClient?.name) {
-      setClientResults([]); return;
-    }
-    const t = setTimeout(async () => {
-      try {
-        const resp = await apiFetch(`/api/quotes/clients?q=${encodeURIComponent(clientSearch)}`);
-        setClientResults(resp?.data || []);
-        setClientDropOpen(true);
-      } catch { /* ignore */ }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [clientSearch, selectedClient]);
-
-  useEffect(() => {
-    function handle(e) {
-      if (clientRef.current && !clientRef.current.contains(e.target)) setClientDropOpen(false);
-    }
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, []);
 
   /* ── helpers ── */
   function patchForm(patch) { setForm(p => ({ ...p, ...patch })); setIsDirty(true); }
@@ -302,7 +272,6 @@ function fillFromProduct(itemId, product) {
     patchItem(itemId, {
       description: product.name       || '',
       unit:        product.unit       || 'pieza',
-      unit_price:  product.unit_price || 0,
       quantity:    product.quantity   || 1,
       product_id:  product.product_id || product.id || null,
     });
@@ -381,19 +350,13 @@ const confirm = await Swal.fire({
 
     setSaving(true);
     try {
-      let clientId = form.client_id;
-      if (showNewClient && newClient.name.trim()) {
-        const r = await apiFetch('/api/quotes/clients', {
-          method: 'POST', body: JSON.stringify({ worker_id: worker.id, ...newClient }),
-        });
-        clientId = r?.data?.id;
-      }
       const payload = {
-        worker_id: worker.id, ...form,
-        client_id:       clientId || null,
+        worker_id: worker.id,
+        ...form,
+        client_id: form.client_id || selectedClient?.id || null,
         discount_amount: Number(form.discount_amount) || 0,
-        tax_rate:        Number(form.tax_rate)        || 0,
-        items:           items.filter(it => it.description.trim()),
+        tax_rate: Number(form.tax_rate) || 0,
+        items: items.filter(it => it.description.trim()),
       };
       const resp = isEdit
         ? await apiFetch(`/api/quotes/${quote.id}`, { method: 'PUT',  body: JSON.stringify(payload) })
@@ -407,7 +370,7 @@ const confirm = await Swal.fire({
   }
 
   /* ── derived ── */
-  const clientName = selectedClient?.name || (showNewClient && newClient.name) || '';
+  const clientName = selectedClient?.name || '';
 
   return (
     <>
@@ -511,59 +474,14 @@ const confirm = await Swal.fire({
                   <span style={{ fontWeight: 900, fontSize: 14, color: '#0f172a' }}>Cliente</span>
                 </div>
 
-                {!showNewClient ? (
-                  <div ref={clientRef} className="qt-clientSearch">
-                    <input className="qt-input" placeholder="Buscar cliente por nombre..."
-                      value={clientSearch}
-                      onChange={e => {
-                        setClientSearch(e.target.value); setIsDirty(true);
-                        if (selectedClient) { setSelectedClient(null); patchForm({ client_id: '' }); }
-                      }}
-                      onFocus={() => clientSearch && setClientDropOpen(true)}
-                    />
-                    {clientDropOpen && (
-                      <div className="qt-clientDropdown">
-                        {clientResults.map(c => (
-                          <button key={c.id} className="qt-clientOption" type="button"
-                            onClick={() => { setSelectedClient(c); setClientSearch(c.name); patchForm({ client_id: c.id }); setClientDropOpen(false); }}
-                          >
-                            {c.name}
-                            <span className="qt-clientOption__sub">
-                              {[c.company, c.phone, c.email].filter(Boolean).join(' · ')}
-                            </span>
-                          </button>
-                        ))}
-                        <button className="qt-clientOption qt-clientOption--new" type="button"
-                          onClick={() => { setShowNewClient(true); setClientDropOpen(false); setNewClient(p => ({ ...p, name: clientSearch })); }}
-                        >
-                          <TbPlus size={13} /> Crear cliente "{clientSearch}"
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <div className="qt-form-grid" style={{ marginBottom: 10 }}>
-                      {[
-                        ['name','Nombre *','Nombre del cliente',false],
-                        ['company','Empresa','Razón social',false],
-                        ['phone','Teléfono','(000) 000-0000',false],
-                        ['email','Email','email@cliente.com',false],
-                        ['rfc','RFC','RFC',true],
-                      ].map(([key,label,ph,upper]) => (
-                        <div className="qt-field" key={key}>
-                          <label className="qt-label">{label}</label>
-                          <input className="qt-input" placeholder={ph} value={newClient[key]}
-                            onChange={e => setNewClient(p => ({ ...p, [key]: upper ? e.target.value.toUpperCase() : e.target.value }))}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                    <button className="qt-btn" type="button" style={{ fontSize: 12 }} onClick={() => setShowNewClient(false)}>
-                      ← Buscar cliente existente
-                    </button>
-                  </>
-                )}
+                <ClientSelectPro
+                  worker={worker}
+                  value={selectedClient}
+                  onChange={(client) => {
+                    setSelectedClient(client || null);
+                    patchForm({ client_id: client?.id || "" });
+                  }}
+                />
               </div>
 
               {/* SECCIÓN: DETALLES */}

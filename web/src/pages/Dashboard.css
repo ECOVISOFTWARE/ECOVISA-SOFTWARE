@@ -118,7 +118,7 @@ html, body, #root {
     "inventory      inventory      operations     operations"
     "calendar       calendar       quotes         quotes"
     "invoices       invoices       forms          forms"
-    "serviceSheets  serviceSheets  weeklyReports  weeklyReports"
+    "clients        clients        weeklyReports  weeklyReports"
     "admin          admin          admin          admin";
   align-content: stretch;
 }
@@ -129,7 +129,7 @@ html, body, #root {
 .mTile--quotes{ grid-area: quotes; }
 .mTile--invoices{ grid-area: invoices; }
 .mTile--forms{ grid-area: forms; }
-.mTile--serviceSheets{ grid-area: serviceSheets; }
+.mTile--clients{ grid-area: clients; }
 .mTile--weeklyReports{ grid-area: weeklyReports; }
 .mTile--admin{ grid-area: admin; }
 
@@ -158,7 +158,7 @@ html, body, #root {
       "operations     operations"
       "calendar       quotes"
       "invoices       forms"
-      "serviceSheets  serviceSheets"
+      "clients        clients"
       "weeklyReports  weeklyReports"
       "admin          admin";
   }

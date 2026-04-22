@@ -1,15 +1,17 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Swal from "sweetalert2";
-import { apiFetch } from "../api";
+import { BarChart, PieChart, LineChart } from "@mui/x-charts";
+import { Switch } from "@mui/material";
+import { apiFetch, apiDownload, API_BASE } from "../api";
 import "./WeeklyReportsModule.css";
 import {
   TbReportAnalytics, TbPlus, TbSearch, TbEdit, TbTrash, TbRefresh,
   TbCalendarEvent, TbCurrencyDollar, TbNotes, TbFileText, TbX,
-  TbChevronDown, TbChevronUp, TbTruck, TbUsers, TbPackage,
+  TbChevronDown, TbChevronUp, TbChevronLeft, TbChevronRight,
+  TbTruck, TbUsers, TbPackage, TbChartBar, TbChartPie, TbChartLine,
   TbTarget, TbReceipt, TbUserSearch, TbAlertTriangle, TbClipboardList,
-  TbBuilding,
+  TbBuilding, TbFileTypePdf, TbFileTypeXls, TbCode,
 } from "react-icons/tb";
-
 // ─── Formatters ───────────────────────────────────────────────
 function formatCurrency(value) {
   return new Intl.NumberFormat("es-MX", {
@@ -429,181 +431,899 @@ function WeeklyReportModal({ open, mode, form, setForm, onClose, onSave }) {
 export default function WeeklyReportsModule({ currentWorker }) {
   const worker = currentWorker || null;
 
-  const [rows, setRows] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [q, setQ] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("create");
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(emptyWeeklyReport(worker));
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [chartIndex, setChartIndex] = useState(0);
+  const [chartType, setChartType] = useState("bar");
+  const [showCharts, setShowCharts] = useState(false);
+  const [expandedRows, setExpandedRows] = useState({});
 
-  const loadRows = useCallback(async () => {
+  const buildQuery = useCallback(() => {
+    const params = new URLSearchParams();
+    if (dateFrom) params.set("date_from", dateFrom);
+    if (dateTo) params.set("date_to", dateTo);
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  }, [dateFrom, dateTo]);
+
+  const loadSummary = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (q.trim()) params.set("q", q.trim());
-      const resp = await apiFetch(`/api/weekly-reports?${params.toString()}`);
-      setRows(resp?.data || []);
+      const resp = await apiFetch(`/api/general-reports/summary${buildQuery()}`);
+      setSummary(resp?.data || null);
     } catch (e) {
-      Swal.fire("Error", e.message || "No se pudieron cargar las bitácoras semanales", "error");
+      Swal.fire("Error", e.message || "No se pudieron cargar los reportes generales", "error");
     } finally {
       setLoading(false);
     }
-  }, [q]);
+  }, [buildQuery]);
 
-  useEffect(() => { loadRows(); }, [loadRows]);
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
 
-  function openCreate() {
-    setModalMode("create"); setEditingId(null);
-    setForm(emptyWeeklyReport(worker)); setModalOpen(true);
-  }
-  function openView(row) {
-    setModalMode("view"); setEditingId(row.id);
-    setForm(hydrateRow(row, worker)); setModalOpen(true);
-  }
-  function openEdit(row) {
-    setModalMode("edit"); setEditingId(row.id);
-    setForm(hydrateRow(row, worker)); setModalOpen(true);
-  }
-  function closeModal() {
-    setModalOpen(false); setEditingId(null);
-    setForm(emptyWeeklyReport(worker));
-  }
-
-  async function saveRow() {
-    if (!String(form.week_label || "").trim()) {
-      Swal.fire("Falta semana", "Escribe la etiqueta de la semana.", "warning");
-      return;
-    }
-    const computedCollected = (form.collection_entries || []).reduce((s, r) => s + Number(r.amount || 0), 0);
-    const computedSales = Number(form.sales_2026 || 0) + Number(form.weekly_billing || 0) + Number(form.sales_without_invoice || 0);
-    const payload = {
-      ...form,
-      created_by: worker?.id || null,
-      sales_2025: Number(form.sales_2025 || 0),
-      budget_2026: Number(form.budget_2026 || 0),
-      sales_2026: Number(form.sales_2026 || 0),
-      weekly_billing: Number(form.weekly_billing || 0),
-      sales_without_invoice: Number(form.sales_without_invoice || 0),
-      total_sales: Number(form.total_sales || 0) !== 0 ? Number(form.total_sales) : computedSales,
-      total_collected: Number(form.total_collected || 0) !== 0 ? Number(form.total_collected) : computedCollected,
-    };
+  const handleExportExcel = useCallback(async () => {
     try {
-      if (modalMode === "edit" && editingId) {
-        await apiFetch(`/api/weekly-reports/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
-      } else {
-        await apiFetch(`/api/weekly-reports`, { method: "POST", body: JSON.stringify(payload) });
+      Swal.fire({
+        title: "Exportando Excel...",
+        text: "Estamos generando tu archivo, espera un momento.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      const result = await apiDownload(
+        `/api/general-reports/export/excel${buildQuery()}`,
+        "reportes_generales.xlsx"
+      );
+
+      Swal.close();
+
+      Swal.fire({
+        icon: "success",
+        title: "Excel exportado",
+        text: `Se descargó correctamente: ${result?.fileName || "reportes_generales.xlsx"}`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+    } catch (e) {
+      Swal.close();
+      Swal.fire("Error", e.message || "No se pudo exportar el Excel", "error");
+    }
+  }, [buildQuery]);
+
+  const handleExportPDF = useCallback(async () => {
+    try {
+      Swal.fire({
+        title: "Exportando PDF...",
+        text: "Estamos generando tu archivo, espera un momento.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      const result = await apiDownload(
+        `/api/general-reports/export/pdf${buildQuery()}`,
+        "reportes_generales.pdf"
+      );
+
+      Swal.close();
+
+      Swal.fire({
+        icon: "success",
+        title: "PDF exportado",
+        text: `Se descargó correctamente: ${result?.fileName || "reportes_generales.pdf"}`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+    } catch (e) {
+      Swal.close();
+      Swal.fire("Error", e.message || "No se pudo exportar el PDF", "error");
+    }
+  }, [buildQuery]);
+
+  const handleExportXML = useCallback(async () => {
+    try {
+      Swal.fire({
+        title: "Exportando XML...",
+        text: "Estamos generando tu archivo, espera un momento.",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+
+      const result = await apiDownload(
+        `/api/general-reports/export/xml${buildQuery()}`,
+        "reportes_generales.xml"
+      );
+
+      Swal.close();
+
+      Swal.fire({
+        icon: "success",
+        title: "XML exportado",
+        text: `Se descargó correctamente: ${result?.fileName || "reportes_generales.xml"}`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+    } catch (e) {
+      Swal.close();
+      Swal.fire("Error", e.message || "No se pudo exportar el XML", "error");
+    }
+  }, [buildQuery]);
+  const loadSummaryRef = useRef(loadSummary);
+
+  useEffect(() => {
+    loadSummaryRef.current = loadSummary;
+  }, [loadSummary]);
+
+  useEffect(() => {
+    const base = String(API_BASE || "").replace(/\/+$/, "");
+    const streamUrl = `${base}/api/general-reports/stream${buildQuery()}`;
+
+    const es = new EventSource(streamUrl);
+
+    es.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data || "{}");
+
+        if (payload?.event === "change" || payload?.event === "connected") {
+          loadSummaryRef.current();
+        }
+      } catch {
+        // ignore
       }
-      closeModal(); await loadRows();
-      Swal.fire("Guardado", modalMode === "edit" ? "Bitácora actualizada correctamente." : "Bitácora creada correctamente.", "success");
-    } catch (e) {
-      Swal.fire("Error", e.message || "No se pudo guardar la bitácora semanal", "error");
-    }
-  }
+    };
 
-  async function deleteRow(row) {
-    const result = await Swal.fire({
-      title: "¿Eliminar bitácora semanal?",
-      text: `Se eliminará el reporte "${row.week_label || "seleccionado"}".`,
-      icon: "warning", showCancelButton: true,
-      confirmButtonText: "Sí, eliminar", cancelButtonText: "Cancelar", reverseButtons: true,
-    });
-    if (!result.isConfirmed) return;
-    try {
-      await apiFetch(`/api/weekly-reports/${row.id}`, { method: "DELETE" });
-      await loadRows();
-      Swal.fire("Eliminada", "La bitácora semanal fue eliminada correctamente.", "success");
-    } catch (e) {
-      Swal.fire("Error", e.message || "No se pudo eliminar la bitácora semanal", "error");
-    }
-  }
+    es.onerror = () => {
+      // EventSource reintenta automáticamente
+    };
 
+    return () => es.close();
+  }, [buildQuery]);
   const kpis = useMemo(() => {
-    const totalReports   = rows.length;
-    const totalSales     = rows.reduce((acc, r) => acc + Number(r.total_sales || 0), 0);
-    const totalCollected = rows.reduce((acc, r) => acc + Number(r.total_collected || 0), 0);
-    return { totalReports, totalSales, totalCollected, pending: totalSales - totalCollected };
-  }, [rows]);
+    return {
+      quotes: summary?.quotes?.count || 0,
+      invoices: summary?.invoices?.count || 0,
+      sales: Number(summary?.quotes?.total_amount || 0),
+      billed: Number(summary?.invoices?.total_amount || 0),
+      products: summary?.inventory?.products_count || 0,
+      movements: summary?.inventory?.movements_count || 0,
+      operations: summary?.operations?.count || 0,
+      completedOperations: summary?.operations?.completed_count || 0,
+      incidentOperations: summary?.operations?.incident_count || 0,
+    };
+  }, [summary]);
+
+const summaryRows = useMemo(() => ([
+    {
+      rowKey: "inventory-products",
+      module: "INVENTARIO",
+      indicator: "Productos activos",
+      value: kpis.products,
+      detail: "Total de productos registrados actualmente",
+      icon: <TbPackage />,
+      history: summary?.inventory?.products_rows || [],
+    },
+    {
+      rowKey: "inventory-movements",
+      module: "INVENTARIO",
+      indicator: "Movimientos del período",
+      value: kpis.movements,
+      detail: "Entradas y salidas registradas dentro del rango filtrado",
+      icon: <TbPackage />,
+      history: summary?.inventory?.movements_rows || [],
+    },
+    {
+      rowKey: "quotes-total",
+      module: "COTIZACIONES",
+      indicator: "Total cotizaciones",
+      value: kpis.quotes,
+      detail: `Monto cotizado: ${formatCurrency(kpis.sales)}`,
+      icon: <TbFileText />,
+      history: summary?.quotes?.recent_rows || [],
+    },
+    {
+      rowKey: "invoices-total",
+      module: "FACTURACIÓN",
+      indicator: "Total facturas",
+      value: kpis.invoices,
+      detail: `Monto facturado: ${formatCurrency(kpis.billed)}`,
+      icon: <TbReceipt />,
+      history: summary?.invoices?.recent_rows || [],
+    },
+    {
+      rowKey: "operations-total",
+      module: "OPERACIONES",
+      indicator: "Total operaciones",
+      value: kpis.operations,
+      detail: `Completadas: ${kpis.completedOperations} · Incidencias: ${kpis.incidentOperations}`,
+      icon: <TbTruck />,
+      history: summary?.operations?.recent_rows || [],
+    },
+  ]), [kpis, summary]);
+
+  const chartSlides = useMemo(() => ([
+    {
+      key: "inventory",
+      title: "Inventario",
+      subtitle: "Productos activos y movimientos",
+      labels: ["Productos", "Movimientos"],
+      values: [Number(kpis.products || 0), Number(kpis.movements || 0)],
+      colors: ["#2563eb", "#0ea5e9"],
+    },
+    {
+      key: "operations",
+      title: "Operaciones",
+      subtitle: "Estado operativo",
+      labels: ["Totales", "Operaciones Completadas", "Incidencias"],
+      values: [
+        Number(kpis.operations || 0),
+        Number(kpis.completedOperations || 0),
+        Number(kpis.incidentOperations || 0),
+      ],
+      colors: ["#4f46e5", "#22c55e", "#f59e0b"],
+    },
+    {
+      key: "quotes",
+      title: "Cotizaciones",
+      subtitle: "Cantidad y monto cotizado",
+      labels: ["Cantidad", "Monto"],
+      values: [Number(kpis.quotes || 0), Number(kpis.sales || 0)],
+      colors: ["#7c3aed", "#8b5cf6"],
+    },
+    {
+      key: "invoices",
+      title: "Facturación",
+      subtitle: "Cantidad y monto facturado",
+      labels: ["Cantidad", "Monto"],
+      values: [Number(kpis.invoices || 0), Number(kpis.billed || 0)],
+      colors: ["#0891b2", "#06b6d4"],
+    },
+  ]), [kpis]);
+
+  const currentSlide = chartSlides[chartIndex] || chartSlides[0];
+
+  const pieSeriesData = useMemo(() => {
+    return currentSlide.labels.map((label, idx) => ({
+      id: idx,
+      value: Number(currentSlide.values[idx] || 0),
+      label,
+      color: currentSlide.colors[idx % currentSlide.colors.length],
+    }));
+  }, [currentSlide]);
+
+  const goPrevChart = useCallback(() => {
+    setChartIndex((prev) => (prev === 0 ? chartSlides.length - 1 : prev - 1));
+  }, [chartSlides.length]);
+
+  const goNextChart = useCallback(() => {
+    setChartIndex((prev) => (prev === chartSlides.length - 1 ? 0 : prev + 1));
+  }, [chartSlides.length]);
+
+  const renderCurrentChart = () => {
+    if (chartType === "pie") {
+      return (
+        <PieChart
+          height={260}
+          series={[
+            {
+              data: pieSeriesData,
+              innerRadius: 42,
+              outerRadius: 82,
+              paddingAngle: 3,
+              cornerRadius: 6,
+            },
+          ]}
+        />
+      );
+    }
+
+    if (chartType === "line") {
+      return (
+        <LineChart
+          height={260}
+          xAxis={[
+            {
+              scaleType: "point",
+              data: currentSlide.labels,
+            },
+          ]}
+          series={[
+            {
+              data: currentSlide.values,
+              label: currentSlide.title,
+              color: currentSlide.colors[0],
+            },
+          ]}
+        />
+      );
+    }
+
+    return (
+      <BarChart
+        height={260}
+        xAxis={[
+          {
+            scaleType: "band",
+            data: currentSlide.labels,
+          },
+        ]}
+        series={[
+          {
+            data: currentSlide.values,
+            label: currentSlide.title,
+            color: currentSlide.colors[0],
+          },
+        ]}
+      />
+    );
+  };
 
   return (
     <div className="wrWrap">
       <div className="wrTopbar">
         <div>
-          <h1 className="wrTitle"><TbReportAnalytics /> Bitácora Semanal</h1>
-          <p className="wrSub">Seguimiento semanal de ventas, cobranza, metas, flota, inventarios y observaciones operativas</p>
+          <h1 className="wrTitle"><TbReportAnalytics /> Reportes Generales</h1>
+          <p className="wrSub">KPIs financieros, operativos e inventarios con exportación</p>
         </div>
+
         <div className="wrTopActions">
-          <button type="button" className="wrBtn wrBtnGhost" onClick={loadRows}><TbRefresh /> Recargar</button>
-          <button type="button" className="wrBtn wrBtnPrimary" onClick={openCreate}><TbPlus /> Nueva bitácora</button>
+          <button
+            type="button"
+            className="wrIconOnlyBtn"
+            onClick={loadSummary}
+            title="Recargar"
+            aria-label="Recargar"
+          >
+            <TbRefresh />
+          </button>
+
+          <button
+            type="button"
+            className="wrIconOnlyBtn wrIconOnlyBtn--pdf"
+            onClick={handleExportPDF}
+            title="Exportar PDF"
+            aria-label="Exportar PDF"
+          >
+            <TbFileTypePdf />
+          </button>
+
+          <button
+            type="button"
+            className="wrIconOnlyBtn wrIconOnlyBtn--excel"
+            onClick={handleExportExcel}
+            title="Exportar Excel"
+            aria-label="Exportar Excel"
+          >
+            <TbFileTypeXls />
+          </button>
+
+          <button
+            type="button"
+            className="wrIconOnlyBtn wrIconOnlyBtn--xml"
+            onClick={handleExportXML}
+            title="Exportar XML"
+            aria-label="Exportar XML"
+          >
+            <TbCode />
+          </button>
         </div>
       </div>
 
-      <div className="wrKpis">
-        <div className="wrKpiCard"><div className="wrKpiLabel">Reportes</div><div className="wrKpiValue">{kpis.totalReports}</div></div>
-        <div className="wrKpiCard"><div className="wrKpiLabel">Ventas</div><div className="wrKpiValue">{formatCurrency(kpis.totalSales)}</div></div>
-        <div className="wrKpiCard"><div className="wrKpiLabel">Cobrado</div><div className="wrKpiValue">{formatCurrency(kpis.totalCollected)}</div></div>
-        <div className="wrKpiCard"><div className="wrKpiLabel">Pendiente</div><div className="wrKpiValue">{formatCurrency(kpis.pending)}</div></div>
-      </div>
+      <div className="wrOverviewGrid">
+        <div className="wrToolbarCard wrToolbarCard--compact wrToolbarCard--side">
+          <div className="wrMiniCardHead">
+            <div className="wrMiniCardEyebrow">Período</div>
+            <h3>Filtro de fechas</h3>
+            <p>Consulta rápida por rango.</p>
+          </div>
 
-      <div className="wrFilters">
-        <div className="wrSearch">
-          <TbSearch />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por semana, sucursal, resumen o notas..." />
+          <div className="wrMiniFieldRow wrMiniFieldRow--stack">
+            <div className="wrMiniField">
+              <label>Fecha inicial</label>
+              <input
+                className="wrMiniInput"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+            </div>
+
+            <div className="wrMiniField">
+              <label>Fecha final</label>
+              <input
+                className="wrMiniInput"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+
+            <div className="wrMiniFieldActions wrMiniFieldActions--compact">
+              <button
+                type="button"
+                className="wrApplyBtn"
+                onClick={loadSummary}
+                title="Aplicar filtros"
+                aria-label="Aplicar filtros"
+              >
+                <TbSearch />
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="wrKpiPanel">
+          <div className="wrMiniCardHead wrMiniCardHead--kpi">
+            <div className="wrMiniCardEyebrow">Resumen</div>
+            <h3>Información del período</h3>
+            <p>Lectura compacta y directa.</p>
+          </div>
+
+          <div className="wrKpiGrid wrKpiGrid--tight">
+            <div className="wrKpiCardCompact wrKpiCardCompact--blue">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbFileText /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Cotizaciones</div>
+                  <div className="wrKpiCardCompact__sub">Registros</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{kpis.quotes}</div>
+            </div>
+
+            <div className="wrKpiCardCompact wrKpiCardCompact--emerald">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbReceipt /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Facturas</div>
+                  <div className="wrKpiCardCompact__sub">Emitidas</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{kpis.invoices}</div>
+            </div>
+
+            <div className="wrKpiCardCompact wrKpiCardCompact--violet">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbCurrencyDollar /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Cotizado</div>
+                  <div className="wrKpiCardCompact__sub">Monto</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{formatCurrency(kpis.sales)}</div>
+            </div>
+
+            <div className="wrKpiCardCompact wrKpiCardCompact--cyan">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbCurrencyDollar /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Facturado</div>
+                  <div className="wrKpiCardCompact__sub">Monto</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{formatCurrency(kpis.billed)}</div>
+            </div>
+
+            <div className="wrKpiCardCompact wrKpiCardCompact--amber">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbPackage /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Productos</div>
+                  <div className="wrKpiCardCompact__sub">Inventario</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{kpis.products}</div>
+            </div>
+
+            <div className="wrKpiCardCompact wrKpiCardCompact--slate">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbPackage /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Movimientos</div>
+                  <div className="wrKpiCardCompact__sub">Período</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{kpis.movements}</div>
+            </div>
+
+            <div className="wrKpiCardCompact wrKpiCardCompact--indigo">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbTruck /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Operaciones</div>
+                  <div className="wrKpiCardCompact__sub">Totales</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{kpis.operations}</div>
+            </div>
+
+            <div className="wrKpiCardCompact wrKpiCardCompact--green">
+              <div className="wrKpiCardCompact__head">
+                <div className="wrKpiCardCompact__icon"><TbTarget /></div>
+                <div>
+                  <div className="wrKpiCardCompact__title">Operaciones Completadas</div>
+                  <div className="wrKpiCardCompact__sub">Sin incidencia</div>
+                </div>
+              </div>
+              <div className="wrKpiCardCompact__value">{kpis.completedOperations}</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="wrCard">
-        <div className="wrTableWrap">
-          <table className="wrTable">
-            <thead>
-              <tr>
-                <th>Semana</th><th>Sucursal</th><th>Periodo</th>
-                <th>Ventas</th><th>Cobrado</th><th>Pendiente</th>
-                <th>Resumen</th><th className="wrThRight">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={8} className="wrEmpty">Cargando bitácoras semanales...</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={8} className="wrEmpty">No hay bitácoras semanales registradas.</td></tr>
-              ) : (
-                rows.map((row) => {
-                  const pending = Number(row.total_sales || 0) - Number(row.total_collected || 0);
-                  return (
-                    <tr key={row.id}>
-                      <td>
-                        <div className="wrPrimaryCell">
-                          <div className="wrPrimaryIcon"><TbFileText /></div>
-                          <div>
-                            <div className="wrPrimaryTitle">{row.week_label || "Sin etiqueta"}</div>
-                            <div className="wrPrimarySub">{formatDate(row.created_at)}</div>
+      <div className="wrSectionCard wrSectionCard--unified">
+        <div className="wrUnifiedHead">
+          <div>
+            <div className="wrSectionCard__eyebrow">Detalle consolidado</div>
+            <h2>Resumen general</h2>
+            <p>Tabla de datos y carrusel de gráficas dentro del mismo contenedor.</p>
+          </div>
+
+          <div className="wrViewSwitch">
+            <span className={!showCharts ? "isActive" : ""}>Tabla</span>
+            <Switch
+              checked={showCharts}
+              onChange={(e) => setShowCharts(e.target.checked)}
+              color="primary"
+            />
+            <span className={showCharts ? "isActive" : ""}>Gráficas</span>
+          </div>
+        </div>
+
+        {!showCharts ? (
+          <>
+            <div className="wrTableWrap">
+              <table className="wrTable wrTable--compact">
+                <thead>
+                  <tr>
+                    <th>Módulo</th>
+                    <th>Indicador</th>
+                    <th>Valor</th>
+                    <th>Detalle</th>
+                  </tr>
+                </thead>
+<tbody>
+  {loading ? (
+    <tr>
+      <td colSpan={4} className="wrEmpty">Cargando reportes generales...</td>
+    </tr>
+  ) : !summary ? (
+    <tr>
+      <td colSpan={4} className="wrEmpty">
+        No se encontró información para el período seleccionado.
+      </td>
+    </tr>
+  ) : (
+    summaryRows.flatMap((row, idx) => {
+      const prevModule = idx > 0 ? summaryRows[idx - 1].module : null;
+      const showModule = prevModule !== row.module;
+      const isOpen = Boolean(expandedRows[row.rowKey]);
+      const history = Array.isArray(row.history) ? row.history : [];
+
+      return [
+        <tr
+          key={`${row.rowKey}-main`}
+          onClick={() =>
+            setExpandedRows((prev) => ({
+              ...prev,
+              [row.rowKey]: !prev[row.rowKey],
+            }))
+          }
+          style={{ cursor: "pointer" }}
+        >
+          <td>
+            {showModule ? (
+              <div className="wrPrimaryCell">
+                <div className="wrPrimaryIcon">{row.icon}</div>
+                <div>
+                  <div className="wrPrimaryTitle">{row.module}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="wrPrimaryCell wrPrimaryCell--continued">
+                <div className="wrPrimarySpacer" />
+              </div>
+            )}
+          </td>
+
+          <td>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span>{row.indicator}</span>
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 999,
+                  background: "#eef4ff",
+                  color: "#2563eb",
+                  border: "1px solid #dbe7ff",
+                  flexShrink: 0,
+                }}
+              >
+                {isOpen ? <TbChevronUp /> : <TbChevronDown />}
+              </span>
+            </div>
+          </td>
+
+          <td>{row.value}</td>
+          <td>{row.detail}</td>
+        </tr>,
+
+        isOpen ? (
+          <tr key={`${row.rowKey}-submenu`}>
+            <td colSpan={4} style={{ padding: 0, background: "#f8fbff" }}>
+              <div
+                style={{
+                  padding: "14px 18px 18px 18px",
+                  borderTop: "1px solid #e5edf8",
+                  borderBottom: "1px solid #e5edf8",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: ".08em",
+                    textTransform: "uppercase",
+                    color: "#64748b",
+                    marginBottom: 12,
+                  }}
+                >
+                  Historial contabilizado
+                </div>
+
+                {history.length === 0 ? (
+                  <div
+                    style={{
+                      padding: "14px 16px",
+                      borderRadius: 14,
+                      background: "#ffffff",
+                      border: "1px solid #e5edf8",
+                      color: "#64748b",
+                      fontWeight: 600,
+                    }}
+                  >
+                    No hay movimientos para desglosar en este indicador.
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "grid",
+                      gap: 10,
+                    }}
+                  >
+                    {history.map((item, itemIdx) => (
+                      <div
+                        key={`${row.rowKey}-item-${item.id || itemIdx}`}
+                        style={{
+                          display: "grid",
+                          gap: 10,
+                          padding: "14px 16px",
+                          borderRadius: 14,
+                          background: "#ffffff",
+                          border: "1px solid #e5edf8",
+                          boxShadow: "0 4px 14px rgba(15, 23, 42, 0.04)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "minmax(0, 1fr) auto auto",
+                            gap: 12,
+                            alignItems: "center",
+                          }}
+                        >
+                          <div style={{ minWidth: 0 }}>
+                            <div
+                              style={{
+                                fontWeight: 800,
+                                color: "#0f172a",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {item.title || "Movimiento"}
+                            </div>
+
+                            <div
+                              style={{
+                                color: "#64748b",
+                                fontSize: 13,
+                                marginTop: 2,
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {item.subtitle || "Sin detalle adicional"}
+                            </div>
+                          </div>
+
+                          {item.amount != null ? (
+                            <div
+                              style={{
+                                fontWeight: 800,
+                                color: "#16a34a",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {formatCurrency(item.amount)}
+                            </div>
+                          ) : (
+                            <div />
+                          )}
+
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: "#64748b",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formatDate(item.created_at)}
                           </div>
                         </div>
-                      </td>
-                      <td><div className="wrInlineMeta"><TbBuilding /><span>{row.branch_name || "—"}</span></div></td>
-                      <td><div className="wrInlineMeta"><TbCalendarEvent /><span>{formatDate(row.start_date)} — {formatDate(row.end_date)}</span></div></td>
-                      <td><div className="wrMoneyCell"><TbCurrencyDollar /><span>{formatCurrency(row.total_sales)}</span></div></td>
-                      <td><div className="wrMoneyCell wrMoneyCell--ok"><TbCurrencyDollar /><span>{formatCurrency(row.total_collected)}</span></div></td>
-                      <td><div className="wrMoneyCell wrMoneyCell--warn"><TbCurrencyDollar /><span>{formatCurrency(pending)}</span></div></td>
-                      <td><div className="wrSummaryCell"><TbNotes /><span>{row.summary || "—"}</span></div></td>
-                      <td className="wrTdRight">
-                        <div className="wrActions">
-                          <button type="button" className="wrIconBtn" onClick={() => openView(row)} title="Ver"><TbFileText /></button>
-                          <button type="button" className="wrIconBtn" onClick={() => openEdit(row)} title="Editar"><TbEdit /></button>
-                          <button type="button" className="wrIconBtn wrIconBtnDanger" onClick={() => deleteRow(row)} title="Eliminar"><TbTrash /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      <WeeklyReportModal open={modalOpen} mode={modalMode} form={form} setForm={setForm} onClose={closeModal} onSave={saveRow} />
+                        {Array.isArray(item.meta) && item.meta.length > 0 ? (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 8,
+                            }}
+                          >
+                            {item.meta.map((metaItem, metaIdx) => (
+                              <div
+                                key={`${row.rowKey}-item-${item.id || itemIdx}-meta-${metaIdx}`}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  padding: "7px 10px",
+                                  borderRadius: 999,
+                                  background: "#f8fbff",
+                                  border: "1px solid #dbe7ff",
+                                  color: "#334155",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  maxWidth: "100%",
+                                }}
+                              >
+                                <span style={{ color: "#64748b", fontWeight: 800 }}>
+                                  {metaItem.label}:
+                                </span>
+                                <span
+                                  style={{
+                                    color: "#0f172a",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {metaItem.value ?? "—"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </td>
+          </tr>
+        ) : null,
+      ];
+    })
+  )}
+</tbody>
+              </table>
+            </div>
+
+            <div className="wrTableNote">
+              La vista se actualiza automáticamente cuando el backend emite cambios del módulo.
+            </div>
+          </>
+        ) : (
+          <div className="wrCarouselShell">
+            <button
+              type="button"
+              className="wrCarouselArrow wrCarouselArrow--side"
+              onClick={goPrevChart}
+              title="Gráfica anterior"
+              aria-label="Gráfica anterior"
+            >
+              <TbChevronLeft />
+            </button>
+
+            <div className="wrCarouselCenter">
+              <div className="wrCarouselTitleBox">
+                <div className="wrCarouselTitle">{currentSlide.title}</div>
+                <div className="wrCarouselSub">{currentSlide.subtitle}</div>
+              </div>
+
+              <div className="wrChartTypeSwitch">
+                <button
+                  type="button"
+                  className={`wrChartTypeBtn ${chartType === "bar" ? "isActive" : ""}`}
+                  onClick={() => setChartType("bar")}
+                  title="Barras"
+                  aria-label="Barras"
+                >
+                  <TbChartBar />
+                </button>
+
+                <button
+                  type="button"
+                  className={`wrChartTypeBtn ${chartType === "pie" ? "isActive" : ""}`}
+                  onClick={() => setChartType("pie")}
+                  title="Pastel"
+                  aria-label="Pastel"
+                >
+                  <TbChartPie />
+                </button>
+
+                <button
+                  type="button"
+                  className={`wrChartTypeBtn ${chartType === "line" ? "isActive" : ""}`}
+                  onClick={() => setChartType("line")}
+                  title="Líneas"
+                  aria-label="Líneas"
+                >
+                  <TbChartLine />
+                </button>
+              </div>
+
+              <div className="wrCarouselCard wrCarouselCard--compact">
+                {renderCurrentChart()}
+              </div>
+
+              <div className="wrCarouselDots">
+                {chartSlides.map((slide, idx) => (
+                  <button
+                    key={slide.key}
+                    type="button"
+                    className={`wrCarouselDot ${idx === chartIndex ? "isActive" : ""}`}
+                    onClick={() => setChartIndex(idx)}
+                    aria-label={`Ir a gráfica ${slide.title}`}
+                    title={slide.title}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="wrCarouselArrow wrCarouselArrow--side"
+              onClick={goNextChart}
+              title="Siguiente gráfica"
+              aria-label="Siguiente gráfica"
+            >
+              <TbChevronRight />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -50,47 +50,7 @@ async function canApproveQuotes(workerId) {
   return isDireccion || Boolean(data.level?.can_approve_quotes) || Number(data.level?.authority) >= 5;
 }
 
-/* ════════════════════════════════════════════════════════
-   CLIENTS
-════════════════════════════════════════════════════════ */
-router.get('/clients', async (req, res) => {
-  try {
-    const { q } = req.query;
-    let query = supabase.from('clients').select('*').order('name');
-    if (q) query = query.ilike('name', `%${q}%`);
-    const { data, error } = await query;
-    if (error) throw error;
-    res.json({ data });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
-router.post('/clients', async (req, res) => {
-  try {
-    const { worker_id, ...payload } = req.body;
-    const { data, error } = await supabase.from('clients')
-      .insert({ ...payload, created_by: worker_id }).select().single();
-    if (error) throw error;
-    res.json({ data });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-router.put('/clients/:id', async (req, res) => {
-  try {
-    const { worker_id, ...payload } = req.body;
-    const { data, error } = await supabase.from('clients')
-      .update(payload).eq('id', req.params.id).select().single();
-    if (error) throw error;
-    res.json({ data });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-router.delete('/clients/:id', async (req, res) => {
-  try {
-    const { error } = await supabase.from('clients').delete().eq('id', req.params.id);
-    if (error) throw error;
-    res.json({ ok: true });
-  } catch (e) { res.status(500).json({ error: e.message }); }
-});
 
 /* ════════════════════════════════════════════════════════
    PUBLIC (sin auth)
@@ -408,7 +368,26 @@ router.post('/:id/cancel', async (req, res) => {
     res.json({ data });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+router.post('/:id/invoice', async (req, res) => {
+  try {
+    const { worker_id } = req.body;
+    if (!await canApproveQuotes(worker_id))
+      return res.status(403).json({ error: 'No tienes permiso para marcar como facturada' });
 
+    const { data, error } = await supabase.from('quotes')
+      .update({ status: 'invoiced' })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    broadcast();
+    res.json({ data });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 /* ── Exports ─────────────────────────────────────────── */
 async function loadFullQuote(id) {
   const { data: quote, error } = await supabase

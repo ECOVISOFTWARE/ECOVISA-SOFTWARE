@@ -2,34 +2,33 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom';
 import {
   TbFileInvoice, TbPlus, TbEye, TbEdit, TbTrash, TbSearch,
-  TbUsers, TbFileText, TbUserCircle,
+  TbUserCircle,
 } from 'react-icons/tb';
 import Swal from 'sweetalert2';
 import { apiFetch } from '../api';
 import QuoteFormModal   from './quotes/QuoteFormModal';
 import QuoteDetailModal from './quotes/QuoteDetailModal';
-import ClientsCatalog   from './quotes/ClientsCatalog';
 import { formatCurrency, formatDate, isExpired } from './quotes/quotes.helpers';
 import './QuotesModule.css';
-
 const TABS = [
-  { key: 'all',       label: 'Todas'     },
-  { key: 'pending',   label: 'En espera' },
-  { key: 'approved',  label: 'Aprobadas' },
-  { key: 'paid',      label: 'Pagadas'   },
-  { key: 'rejected',  label: 'Rechazadas'},
-  { key: 'cancelled', label: 'Canceladas'},
+  { key: 'all',       label: 'Todas'      },
+  { key: 'pending',   label: 'En espera'  },
+  { key: 'approved',  label: 'Aprobadas'  },
+  { key: 'invoiced',  label: 'Facturadas' },
+  { key: 'rejected',  label: 'Rechazadas' },
+  { key: 'cancelled', label: 'Canceladas' },
 ];
 
 const SEMAPHORE = {
-  draft:     { color: '#475569', bg: '#f8fafc', border: '#cbd5e1', dot: '#94a3b8', label: 'Borrador'   },
-  pending:   { color: '#b45309', bg: '#fffbeb', border: '#fbbf24', dot: '#f59e0b', label: 'En espera'  },
-  sent:      { color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', dot: '#8b5cf6', label: 'Enviada'    },
-  approved:  { color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', dot: '#3b82f6', label: 'Aprobada'   },
-  rejected:  { color: '#b91c1c', bg: '#fef2f2', border: '#f87171', dot: '#ef4444', label: 'Rechazada'  },
-  paid:      { color: '#15803d', bg: '#dcfce7', border: '#4ade80', dot: '#22c55e', label: 'Pagada'     },
-  cancelled: { color: '#6b7280', bg: '#f9fafb', border: '#d1d5db', dot: '#9ca3af', label: 'Cancelada'  },
-  expired:   { color: '#b91c1c', bg: '#fff1f2', border: '#fda4af', dot: '#e11d48', label: 'Expirada'   },
+  draft:     { color: '#475569', bg: '#f8fafc', border: '#cbd5e1', dot: '#94a3b8', label: 'Borrador'    },
+  pending:   { color: '#b45309', bg: '#fffbeb', border: '#fbbf24', dot: '#f59e0b', label: 'En espera'   },
+  sent:      { color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', dot: '#8b5cf6', label: 'Enviada'     },
+  approved:  { color: '#1d4ed8', bg: '#eff6ff', border: '#93c5fd', dot: '#3b82f6', label: 'Aprobada'    },
+  invoiced:  { color: '#0f766e', bg: '#ecfeff', border: '#67e8f9', dot: '#06b6d4', label: 'Facturada'   },
+  rejected:  { color: '#b91c1c', bg: '#fef2f2', border: '#f87171', dot: '#ef4444', label: 'Rechazada'   },
+  paid:      { color: '#15803d', bg: '#dcfce7', border: '#4ade80', dot: '#22c55e', label: 'Pagada'      },
+  cancelled: { color: '#6b7280', bg: '#f9fafb', border: '#d1d5db', dot: '#9ca3af', label: 'Cancelada'   },
+  expired:   { color: '#b91c1c', bg: '#fff1f2', border: '#fda4af', dot: '#e11d48', label: 'Expirada'    },
 };
 
 /* ══════════════════════════════════════════════════════
@@ -128,11 +127,9 @@ const transitions = useMemo(() => {
       t.push({ to: 'rejected', label: 'Rechazar cotización' });
     // approved
     if (quote.status === 'approved' && canApprove)
-      t.push({ to: 'paid',      label: 'Marcar como pagada'   });
+      t.push({ to: 'cancelled', label: 'Cancelar cotización' });
     if (quote.status === 'approved' && canApprove)
-      t.push({ to: 'cancelled', label: 'Cancelar cotización'  });
-    if (quote.status === 'approved' && canApprove)
-      t.push({ to: 'rejected',  label: 'Rechazar cotización'  });
+      t.push({ to: 'rejected', label: 'Rechazar cotización' });
     // rejected
     if (quote.status === 'rejected' && canApprove)
       t.push({ to: 'pending', label: 'Volver a en espera' });
@@ -164,7 +161,7 @@ const transitions = useMemo(() => {
   }, [open]);
 
   async function doTransition(to, reason = '') {
-    const ACTIONS = { approved:'approve', rejected:'reject', pending:'reopen', paid:'pay', cancelled:'cancel' };
+    const ACTIONS = { approved:'approve', rejected:'reject', pending:'reopen', cancelled:'cancel' };
     setLoading(true);
     try {
       const resp = await apiFetch(`/api/quotes/${quote.id}/${ACTIONS[to]}`, {
@@ -250,7 +247,6 @@ const transitions = useMemo(() => {
    MAIN MODULE
 ══════════════════════════════════════════════════════ */
 export default function QuotesModule({ currentWorker }) {
-  const [view,     setView]     = useState('quotes');
   const [quotes,   setQuotes]   = useState([]);
   const [loading,  setLoading]  = useState(false);
   const [search,   setSearch]   = useState('');
@@ -344,38 +340,128 @@ async function openEdit(id) {
     openEdit(q.id);
   }
 
-async function handleDelete(q) {
+async function handleCreateInvoiceFromQuote(q) {
+    const client = q.client || q.client_snapshot || {};
+
     const res = await Swal.fire({
-      title: '¿Eliminar cotización?',
-      html: `<div style="font-size:14px;color:#64748b">Se eliminará permanentemente <b>${q.folio}</b>.<br/>Esta acción no se puede deshacer.</div>`,
-      iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#fef2f2;border:2px solid #fca5a5;display:flex;align-items:center;justify-content:center;color:#dc2626"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></div>',
+      title: '¿Crear factura?',
+      html: `<div style="font-size:14px;color:#64748b">Se generará una factura nueva desde la cotización <b>${q.folio || '—'}</b>.</div>`,
+      iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#eff6ff;border:2px solid #bfdbfe;display:flex;align-items:center;justify-content:center;color:#2563eb"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg></div>',
       customClass: {
         icon: 'swal-no-border',
         popup: 'swal-quote-popup',
         title: 'swal-quote-title',
         htmlContainer: 'swal-quote-text',
+        confirmButton: 'swal-quote-confirm',
+        cancelButton: 'swal-quote-cancel',
       },
-      buttonsStyling: true,
+      buttonsStyling: false,
       showCancelButton: true,
-      confirmButtonText: 'Eliminar',
+      confirmButtonText: 'Sí, facturar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#475569',
-      reverseButtons: true,
     });
-    if (!res.isConfirmed) return;
-    try {
-      await apiFetch(`/api/quotes/${q.id}?worker_id=${currentWorker?.id}`, { method: 'DELETE' });
-      Swal.fire({
-        iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#f0fdf4;border:2px solid #86efac;display:flex;align-items:center;justify-content:center;color:#16a34a"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>',
-        title: 'Eliminada',
-        customClass: { icon: 'swal-no-border', popup: 'swal-quote-popup', title: 'swal-quote-title' },
-        buttonsStyling: false,
-        timer: 1400, showConfirmButton: false,
-      });
-    } catch (e) { Swal.fire('Error', e.message || 'No se pudo eliminar', 'error'); }
-  }
 
+    if (!res.isConfirmed) return;
+
+    try {
+      const subtotal = Number(q.subtotal || 0);
+      const tax = Number(q.tax_amount || 0);
+      const total = Number(q.total || 0);
+
+      await apiFetch('/api/invoices', {
+        method: 'POST',
+        body: JSON.stringify({
+          client_id: q.client_id || null,
+          client_name: client.name || '',
+          quote_id: q.id,
+          service_location: client.address || '',
+          delivery_date: q.valid_until || null,
+          subtotal,
+          tax,
+          total,
+          status: 'draft',
+          notes: `Factura generada desde cotización ${q.folio || ''}`,
+          created_by: currentWorker?.id || null,
+        }),
+      });
+
+      await apiFetch(`/api/quotes/${q.id}/invoice`, {
+        method: 'POST',
+        body: JSON.stringify({ worker_id: currentWorker?.id || null }),
+      });
+
+      await load();
+
+      await Swal.fire({
+        iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#f0fdf4;border:2px solid #86efac;display:flex;align-items:center;justify-content:center;color:#16a34a"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>',
+        title: 'Factura creada correctamente',
+        customClass: {
+          icon: 'swal-no-border',
+          popup: 'swal-quote-popup',
+          title: 'swal-quote-title',
+        },
+        buttonsStyling: false,
+        timer: 1400,
+        showConfirmButton: false,
+      });
+    } catch (e) {
+      await Swal.fire({
+        iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#fef2f2;border:2px solid #fca5a5;display:flex;align-items:center;justify-content:center;color:#dc2626"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div>',
+        title: 'Error',
+        text: e.message || 'No se pudo crear la factura',
+        customClass: {
+          icon: 'swal-no-border',
+          popup: 'swal-quote-popup',
+          title: 'swal-quote-title',
+          confirmButton: 'swal-quote-confirm',
+        },
+        buttonsStyling: false,
+        confirmButtonText: 'Entendido',
+      });
+    }
+  }
+async function handleDelete(q) {
+  const res = await Swal.fire({
+    title: '¿Eliminar cotización?',
+    html: `<div style="font-size:14px;color:#64748b">Se eliminará permanentemente <b>${q.folio}</b>.<br/>Esta acción no se puede deshacer.</div>`,
+    iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#fef2f2;border:2px solid #fca5a5;display:flex;align-items:center;justify-content:center;color:#dc2626"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></div>',
+    customClass: {
+      icon: 'swal-no-border',
+      popup: 'swal-quote-popup',
+      title: 'swal-quote-title',
+      htmlContainer: 'swal-quote-text',
+    },
+    buttonsStyling: false,
+    showCancelButton: true,
+    confirmButtonText: 'Eliminar',
+    cancelButtonText: 'Cancelar',
+  });
+
+  if (!res.isConfirmed) return;
+
+  try {
+    await apiFetch(`/api/quotes/${q.id}?worker_id=${currentWorker?.id}`, {
+      method: 'DELETE',
+    });
+
+    await Swal.fire({
+      iconHtml: '<div style="width:56px;height:56px;border-radius:50%;background:#f0fdf4;border:2px solid #86efac;display:flex;align-items:center;justify-content:center;color:#16a34a"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>',
+      title: 'Eliminada',
+      customClass: {
+        icon: 'swal-no-border',
+        popup: 'swal-quote-popup',
+        title: 'swal-quote-title',
+      },
+      buttonsStyling: false,
+      timer: 1400,
+      showConfirmButton: false,
+    });
+
+    load(); // 🔥 refresca tabla
+  } catch (e) {
+    Swal.fire('Error', e.message || 'No se pudo eliminar', 'error');
+  }
+}
   const counts = useMemo(() => {
     const c = { all: quotes.length };
     quotes.forEach(q => { c[q.status] = (c[q.status] || 0) + 1; });
@@ -383,17 +469,17 @@ async function handleDelete(q) {
   }, [quotes]);
 
 const kpis = useMemo(() => {
-    const approved = quotes.filter(q => q.status === 'approved');
-    const pending  = quotes.filter(q => q.status === 'pending');
-    const paid     = quotes.filter(q => q.status === 'paid');
+    const approved  = quotes.filter(q => q.status === 'approved');
+    const pending   = quotes.filter(q => q.status === 'pending');
+    const invoiced  = quotes.filter(q => q.status === 'invoiced');
     return {
-      total:         quotes.length,
-      approvedCount: approved.length,
-      pendingCount:  pending.length,
-      paidCount:     paid.length,
-      approvedValue: approved.reduce((s, q) => s + Number(q.total || 0), 0),
-      pendingValue:  pending.reduce((s,  q) => s + Number(q.total || 0), 0),
-      paidValue:     paid.reduce((s,    q) => s + Number(q.total || 0), 0),
+      total:          quotes.length,
+      approvedCount:  approved.length,
+      pendingCount:   pending.length,
+      invoicedCount:  invoiced.length,
+      approvedValue:  approved.reduce((s, q) => s + Number(q.total || 0), 0),
+      pendingValue:   pending.reduce((s,  q) => s + Number(q.total || 0), 0),
+      invoicedValue:  invoiced.reduce((s, q) => s + Number(q.total || 0), 0),
     };
   }, [quotes]);
 
@@ -411,29 +497,14 @@ const kpis = useMemo(() => {
           <p className="qt-title-sub">Gestión y seguimiento · Tiempo real</p>
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div className="qt-view-toggle">
-            <button type="button" className={`qt-view-btn ${view === 'quotes' ? 'active' : ''}`}
-              onClick={() => setView('quotes')}>
-              <TbFileText size={14} /> Cotizaciones
-            </button>
-            <button type="button" className={`qt-view-btn ${view === 'clients' ? 'active' : ''}`}
-              onClick={() => setView('clients')}>
-              <TbUsers size={14} /> Clientes
-            </button>
-          </div>
-          {view === 'quotes' && (
-            <button className="qt-btn qt-btn--primary" type="button"
-              onClick={() => { setEditQ(null); setShowForm(true); }}>
-              <TbPlus size={14} /> Nueva cotización
-            </button>
-          )}
+          <button className="qt-btn qt-btn--primary" type="button"
+            onClick={() => { setEditQ(null); setShowForm(true); }}>
+            <TbPlus size={14} /> Nueva cotización
+          </button>
         </div>
       </div>
 
-      {view === 'clients' && <ClientsCatalog worker={currentWorker} />}
-
-      {view === 'quotes' && (
-        <>
+      <>
           {/* KPIs */}
           <div className="qt-kpiRow">
             <div className="qt-kpi" style={{ '--qt-kpi-accent': '#2563eb' }}>
@@ -450,10 +521,10 @@ const kpis = useMemo(() => {
               <div className="qt-kpi__value">{kpis.approvedCount}</div>
               <div className="qt-kpi__sub">{formatCurrency(kpis.approvedValue)}</div>
             </div>
-<div className="qt-kpi" style={{ '--qt-kpi-accent': '#22c55e' }}>
-              <div className="qt-kpi__label">Pagadas</div>
-              <div className="qt-kpi__value">{kpis.paidCount}</div>
-              <div className="qt-kpi__sub">{formatCurrency(kpis.paidValue)}</div>
+<div className="qt-kpi" style={{ '--qt-kpi-accent': '#06b6d4' }}>
+              <div className="qt-kpi__label">Facturadas</div>
+              <div className="qt-kpi__value">{kpis.invoicedCount}</div>
+              <div className="qt-kpi__sub">{formatCurrency(kpis.invoicedValue)}</div>
             </div>
           </div>
 
@@ -559,11 +630,19 @@ const kpis = useMemo(() => {
                                 onClick={() => openDetail(q.id)}>
                                 <TbEye size={14} />
                               </button>
+
+                              <button className="qt-btn qt-btn--icon" type="button"
+                                title="Facturar cotización" style={{ color: '#16a34a' }}
+                                onClick={() => handleCreateInvoiceFromQuote(q)}>
+                                <TbFileInvoice size={14} />
+                              </button>
+
                               <button className="qt-btn qt-btn--icon" type="button"
                                 title="Editar cotización"
                                 onClick={() => handleEditWithConfirm(q)}>
                                 <TbEdit size={14} />
                               </button>
+
                               <button className="qt-btn qt-btn--icon" type="button"
                                 title="Eliminar cotización" style={{ color: '#dc2626' }}
                                 onClick={() => handleDelete(q)}>
@@ -580,7 +659,7 @@ const kpis = useMemo(() => {
             </div>
           </div>
         </>
-      )}
+    
 
       {showForm && (
         <QuoteFormModal

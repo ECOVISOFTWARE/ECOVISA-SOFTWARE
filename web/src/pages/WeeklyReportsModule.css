@@ -196,11 +196,14 @@
   color:#0f172a;
 }
 
-.wrPrimarySub{
-  margin-top:4px;
-  font-size:12px;
-  color:#94a3b8;
-  font-weight:800;
+.wrPrimaryCell--continued{
+  min-height:40px;
+}
+
+.wrPrimarySpacer{
+  width:40px;
+  height:40px;
+  flex-shrink:0;
 }
 
 .wrInlineMeta{
@@ -542,4 +545,856 @@
   border-radius: 10px;
   gap: 4px;
   align-self: flex-start;
+}
+
+/* ── Reportes generales PRO ── */
+.wrTopbar{
+  align-items:flex-start;
+}
+
+.wrLiveBadge{
+  margin-top:10px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:#eef6ff;
+  color:#2563eb;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid #bfdbfe;
+}
+
+.wrTopActions{
+  align-items:center;
+}
+
+.wrExportBtn{
+  height:48px;
+  border-radius:16px;
+  border:1px solid #dbe2ea;
+  background:#fff;
+  color:#0f172a;
+  padding:0 14px;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-weight:900;
+  cursor:pointer;
+  transition:160ms ease;
+  box-shadow:0 8px 20px rgba(15,23,42,0.05);
+}
+
+.wrExportBtn:hover{
+  transform:translateY(-1px);
+  background:#f8fafc;
+}
+
+.wrExportBtn__icon{
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  font-size:18px;
+  background:#fff;
+}
+
+.wrExportBtn--pdf .wrExportBtn__icon{
+  color:#dc2626;
+  background:#fef2f2;
+  border:1px solid #fecaca;
+}
+
+.wrExportBtn--excel .wrExportBtn__icon{
+  color:#16a34a;
+  background:#f0fdf4;
+  border:1px solid #bbf7d0;
+}
+
+.wrExportBtn--xml .wrExportBtn__icon{
+  color:#7c3aed;
+  background:#f5f3ff;
+  border:1px solid #ddd6fe;
+}
+
+.wrToolbarCard{
+  background:rgba(255,255,255,0.92);
+  border:1px solid rgba(15,23,42,0.08);
+  border-radius:20px;
+  box-shadow:0 14px 40px rgba(15,23,42,0.06);
+  padding:16px 20px;
+}
+
+.wrMiniFieldRow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  gap:14px;
+  align-items:end;
+}
+
+.wrMiniField{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.wrMiniField label{
+  font-size:11px;
+  color:#64748b;
+  font-weight:1000;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.wrMiniInput{
+  height:42px;
+  width:100%;
+  border:1px solid #dbe2ea;
+  border-radius:14px;
+  background:#fff;
+  color:#0f172a;
+  font-size:13px;
+  font-weight:800;
+  outline:0;
+  padding:0 14px;
+  box-sizing:border-box;
+}
+
+.wrMiniFieldActions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.wrKpiGrid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+
+.wrKpiCardCompact{
+  position:relative;
+  overflow:hidden;
+  background:rgba(255,255,255,0.96);
+  border:1px solid rgba(15,23,42,0.08);
+  border-radius:18px;
+  padding:14px 14px 16px;
+  box-shadow:0 10px 30px rgba(15,23,42,0.06);
+}
+
+.wrKpiCardCompact::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:4px;
+  background:var(--wr-kpi-accent,#2563eb);
+}
+
+.wrKpiCardCompact--blue{ --wr-kpi-accent:#2563eb; }
+.wrKpiCardCompact--emerald{ --wr-kpi-accent:#16a34a; }
+.wrKpiCardCompact--violet{ --wr-kpi-accent:#7c3aed; }
+.wrKpiCardCompact--cyan{ --wr-kpi-accent:#0891b2; }
+.wrKpiCardCompact--amber{ --wr-kpi-accent:#d97706; }
+.wrKpiCardCompact--slate{ --wr-kpi-accent:#475569; }
+.wrKpiCardCompact--indigo{ --wr-kpi-accent:#4f46e5; }
+.wrKpiCardCompact--green{ --wr-kpi-accent:#22c55e; }
+
+.wrKpiCardCompact__head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.wrKpiCardCompact__icon{
+  width:38px;
+  height:38px;
+  border-radius:12px;
+  background:#f8fafc;
+  display:grid;
+  place-items:center;
+  color:var(--wr-kpi-accent,#2563eb);
+  font-size:18px;
+  flex-shrink:0;
+}
+
+.wrKpiCardCompact__title{
+  font-size:13px;
+  font-weight:1000;
+  color:#0f172a;
+  line-height:1.1;
+}
+
+.wrKpiCardCompact__sub{
+  margin-top:3px;
+  font-size:11px;
+  color:#94a3b8;
+  font-weight:800;
+}
+
+.wrKpiCardCompact__value{
+  margin-top:12px;
+  font-size:26px;
+  font-weight:1000;
+  color:#0f172a;
+  letter-spacing:-0.04em;
+}
+
+.wrSectionCard{
+  background:rgba(255,255,255,0.94);
+  border:1px solid rgba(15,23,42,0.08);
+  border-radius:22px;
+  box-shadow:0 14px 40px rgba(15,23,42,0.06);
+  overflow:hidden;
+}
+
+.wrSectionCard__head{
+  padding:20px 20px 10px;
+}
+
+.wrSectionCard__eyebrow{
+  font-size:11px;
+  font-weight:1000;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#94a3b8;
+}
+
+.wrSectionCard__head h2{
+  margin:6px 0 0;
+  font-size:24px;
+  line-height:1.1;
+  color:#0f172a;
+  font-weight:1000;
+  letter-spacing:-0.04em;
+}
+
+.wrSectionCard__head p{
+  margin:8px 0 0;
+  color:#64748b;
+  font-size:13px;
+  font-weight:700;
+}
+
+.wrChartsGrid{
+  display:grid;
+  grid-template-columns:1.3fr .9fr;
+  gap:14px;
+  padding:0 20px 20px;
+}
+
+.wrChartCard{
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:18px;
+  padding:14px;
+  box-shadow:0 8px 24px rgba(15,23,42,0.05);
+}
+
+.wrChartCard__title{
+  font-size:13px;
+  font-weight:1000;
+  color:#0f172a;
+  margin-bottom:8px;
+}
+
+.wrTable--compact{
+  min-width:900px;
+}
+
+.wrTableNote{
+  padding:14px 20px 18px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+}
+
+@media (max-width: 1180px){
+  .wrKpiGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .wrChartsGrid{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width: 760px){
+  .wrMiniFieldRow{
+    grid-template-columns:1fr;
+  }
+
+  .wrMiniFieldActions{
+    width:100%;
+  }
+
+  .wrMiniFieldActions .wrBtn{
+    width:100%;
+  }
+
+  .wrKpiGrid{
+    grid-template-columns:1fr;
+  }
+
+  .wrExportBtn{
+    flex:1;
+    justify-content:center;
+  }
+
+  .wrLiveBadge{
+    width:100%;
+    justify-content:center;
+  }
+}
+
+.wrLiveBadge svg{
+  font-size:14px;
+}
+
+.wrLiveBadge::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#22c55e;
+  box-shadow:0 0 0 0 rgba(34,197,94,.45);
+  animation:wrLivePulse 1.8s infinite;
+}
+
+@keyframes wrLivePulse{
+  0%{
+    box-shadow:0 0 0 0 rgba(34,197,94,.45);
+  }
+  70%{
+    box-shadow:0 0 0 10px rgba(34,197,94,0);
+  }
+  100%{
+    box-shadow:0 0 0 0 rgba(34,197,94,0);
+  }
+}
+
+.wrTopActions .wrBtn,
+.wrTopActions .wrExportBtn{
+  flex-shrink:0;
+}
+
+.wrChartCard .MuiChartsLegend-root{
+  font-size:12px;
+}
+
+.wrChartCard .MuiChartsAxis-tickLabel,
+.wrChartCard .MuiChartsLegend-label{
+  fill:#64748b;
+}
+
+.wrChartCard .MuiChartsAxis-line,
+.wrChartCard .MuiChartsAxis-tick{
+  stroke:#cbd5e1;
+}
+
+/* ── Layout superior compacto ── */
+.wrIconOnlyBtn{
+  width:50px;
+  height:50px;
+  border-radius:16px;
+  border:1px solid transparent;
+  background:transparent;
+  color:#0f172a;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  box-shadow:none;
+  font-size:30px;
+}
+
+.wrIconOnlyBtn:hover{
+  transform:translateY(-1px);
+  background:rgba(255,255,255,0.55);
+  border-color:rgba(15,23,42,0.06);
+  box-shadow:0 6px 16px rgba(15,23,42,0.06);
+}
+
+.wrIconOnlyBtn:focus-visible{
+  outline:none;
+  background:rgba(255,255,255,0.95);
+  border-color:rgba(15,23,42,0.12);
+  box-shadow:0 0 0 3px rgba(59,130,246,0.16);
+}
+
+.wrIconOnlyBtn svg{
+  font-size:30px;
+  line-height:1;
+}
+
+.wrIconOnlyBtn--pdf{ color:#dc2626; }
+.wrIconOnlyBtn--excel{ color:#16a34a; }
+.wrIconOnlyBtn--xml{ color:#7c3aed; }
+
+.wrOverviewGrid{
+  display:grid;
+  grid-template-columns:minmax(320px,0.92fr) minmax(0,1.45fr);
+  gap:14px;
+  align-items:stretch;
+}
+
+.wrToolbarCard--compact{
+  padding:14px 16px;
+}
+
+.wrToolbarCard--side{
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-height:100%;
+}
+
+.wrMiniCardHead{
+  margin-bottom:10px;
+}
+
+.wrMiniCardHead--kpi{
+  margin-bottom:12px;
+}
+
+.wrMiniCardEyebrow{
+  font-size:10px;
+  font-weight:1000;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#94a3b8;
+}
+
+.wrMiniCardHead h3{
+  margin:4px 0 0;
+  font-size:18px;
+  line-height:1.1;
+  color:#0f172a;
+  font-weight:1000;
+  letter-spacing:-0.03em;
+}
+
+.wrMiniCardHead p{
+  margin:6px 0 0;
+  color:#64748b;
+  font-size:12px;
+  font-weight:700;
+}
+
+.wrMiniFieldRow--stack{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+}
+
+.wrMiniFieldActions--compact{
+  display:flex;
+  align-items:flex-end;
+}
+
+.wrMiniFieldRow--stack .wrMiniField label{
+  font-size:10px;
+}
+
+.wrMiniFieldRow--stack .wrMiniInput{
+  height:38px;
+  border-radius:12px;
+  font-size:12px;
+  padding:0 12px;
+}
+
+.wrApplyBtn{
+  height:40px;
+  width:100%;
+  border:none;
+  border-radius:12px;
+  background:#0f172a;
+  color:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  transition:160ms ease;
+}
+
+.wrApplyBtn:hover{
+  transform:translateY(-1px);
+}
+
+.wrKpiPanel{
+  background:rgba(255,255,255,0.94);
+  border:1px solid rgba(15,23,42,0.08);
+  border-radius:20px;
+  box-shadow:0 14px 40px rgba(15,23,42,0.06);
+  padding:14px;
+}
+
+.wrKpiGrid--tight{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+.wrKpiGrid--tight .wrKpiCardCompact{
+  padding:12px 12px 13px;
+  border-radius:16px;
+}
+
+.wrKpiGrid--tight .wrKpiCardCompact__head{
+  gap:8px;
+}
+
+.wrKpiGrid--tight .wrKpiCardCompact__icon{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  font-size:16px;
+}
+
+.wrKpiGrid--tight .wrKpiCardCompact__title{
+  font-size:12px;
+}
+
+.wrKpiGrid--tight .wrKpiCardCompact__sub{
+  font-size:10px;
+  margin-top:2px;
+}
+
+.wrKpiGrid--tight .wrKpiCardCompact__value{
+  margin-top:10px;
+  font-size:22px;
+}
+
+/* ── Contenedor unificado tabla / gráficas ── */
+.wrSectionCard--unified{
+  padding:0;
+}
+
+.wrUnifiedHead{
+  padding:18px 20px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+.wrUnifiedHead h2{
+  margin:6px 0 0;
+  font-size:24px;
+  line-height:1.1;
+  color:#0f172a;
+  font-weight:1000;
+  letter-spacing:-0.04em;
+}
+
+.wrUnifiedHead p{
+  margin:8px 0 0;
+  color:#64748b;
+  font-size:13px;
+  font-weight:700;
+}
+
+.wrViewSwitch{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:999px;
+}
+
+.wrViewSwitch span{
+  font-size:12px;
+  font-weight:900;
+  color:#94a3b8;
+  transition:160ms ease;
+}
+
+.wrViewSwitch span.isActive{
+  color:#0f172a;
+}
+
+/* ── Carrusel estilo img 3 ── */
+.wrCarouselShell{
+  padding:0 18px 18px;
+  display:grid;
+  grid-template-columns:56px minmax(0,1fr) 56px;
+  gap:14px;
+  align-items:center;
+}
+
+.wrCarouselCenter{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:0;
+}
+
+.wrCarouselArrow{
+  width:48px;
+  height:48px;
+  border-radius:999px;
+  border:1px solid #dbe2ea;
+  background:#fff;
+  color:#3157a7;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:160ms ease;
+  box-shadow:0 8px 20px rgba(15,23,42,0.05);
+  font-size:20px;
+}
+
+.wrCarouselArrow:hover{
+  transform:translateY(-1px) scale(1.03);
+  background:#f8fafc;
+}
+
+.wrCarouselArrow--side{
+  align-self:center;
+}
+
+.wrCarouselTitleBox{
+  text-align:center;
+  margin-bottom:12px;
+}
+
+.wrCarouselTitle{
+  font-size:18px;
+  font-weight:1000;
+  color:#0f172a;
+}
+
+.wrCarouselSub{
+  margin-top:4px;
+  font-size:12px;
+  color:#64748b;
+  font-weight:800;
+}
+
+.wrChartTypeSwitch{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.wrChartTypeBtn{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  border:1px solid #dbe2ea;
+  background:#fff;
+  color:#64748b;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:160ms ease;
+  font-size:18px;
+}
+
+.wrChartTypeBtn:hover{
+  transform:translateY(-1px);
+  background:#f8fafc;
+}
+
+.wrChartTypeBtn.isActive{
+  background:#0f172a;
+  color:#fff;
+  border-color:#0f172a;
+}
+
+.wrCarouselCard{
+  width:min(100%, 720px);
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:22px;
+  padding:14px 16px 10px;
+  box-shadow:0 10px 24px rgba(15,23,42,0.05);
+}
+
+.wrCarouselCard--compact{
+  min-height:320px;
+}
+
+.wrCarouselDots{
+  margin-top:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+.wrCarouselDot{
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  border:none;
+  background:#cbd5e1;
+  cursor:pointer;
+  transition:160ms ease;
+}
+
+.wrCarouselDot.isActive{
+  width:22px;
+  background:#3157a7;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1180px){
+  .wrOverviewGrid{
+    grid-template-columns:1fr;
+  }
+
+  .wrKpiGrid--tight{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 760px){
+  .wrKpiGrid--tight{
+    grid-template-columns:1fr;
+  }
+
+  .wrCarouselShell{
+    grid-template-columns:1fr;
+  }
+
+  .wrCarouselArrow--side{
+    display:none;
+  }
+
+  .wrUnifiedHead{
+    align-items:flex-start;
+  }
+
+  .wrViewSwitch{
+    width:100%;
+    justify-content:center;
+  }
+
+  .wrTopActions{
+    width:100%;
+  }
+}
+.wrCarouselTitleBox{
+  text-align:center;
+}
+
+.wrCarouselTitle{
+  font-size:18px;
+  font-weight:1000;
+  color:#0f172a;
+}
+
+.wrCarouselSub{
+  margin-top:4px;
+  font-size:12px;
+  color:#64748b;
+  font-weight:800;
+}
+
+.wrChartTypeSwitch{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:14px;
+}
+
+.wrChartTypeBtn{
+  width:46px;
+  height:46px;
+  border-radius:14px;
+  border:1px solid #dbe2ea;
+  background:#fff;
+  color:#64748b;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:160ms ease;
+  font-size:20px;
+}
+
+.wrChartTypeBtn:hover{
+  transform:translateY(-1px);
+  background:#f8fafc;
+}
+
+.wrChartTypeBtn.isActive{
+  background:#0f172a;
+  color:#fff;
+  border-color:#0f172a;
+  box-shadow:0 10px 24px rgba(15,23,42,0.18);
+}
+
+.wrCarouselCard{
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 8px 24px rgba(15,23,42,0.05);
+}
+
+.wrCarouselDots{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-top:14px;
+}
+
+.wrCarouselDot{
+  width:12px;
+  height:12px;
+  border-radius:999px;
+  border:0;
+  background:#cbd5e1;
+  cursor:pointer;
+  transition:160ms ease;
+}
+
+.wrCarouselDot.isActive{
+  width:28px;
+  background:#0f172a;
+}
+
+@media (max-width: 980px){
+  .wrMiniFieldRow--compact{
+    grid-template-columns:1fr 1fr auto;
+  }
+}
+
+@media (max-width: 760px){
+  .wrMiniFieldRow--compact{
+    grid-template-columns:1fr;
+  }
+
+  .wrMiniFieldActions--compact{
+    width:100%;
+  }
+
+  .wrMiniFieldActions--compact .wrIconOnlyBtn{
+    width:100%;
+  }
+
+  .wrTopActions{
+    width:100%;
+    justify-content:flex-end;
+  }
+
+  .wrCarouselTop{
+    grid-template-columns:44px 1fr 44px;
+  }
+
+  .wrCarouselArrow{
+    width:44px;
+    height:44px;
+    border-radius:14px;
+  }
 }

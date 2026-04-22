@@ -11,6 +11,7 @@ import InvoicesModule from "./InvoicesModule.jsx";
 import ServiceSheetsModule from "./ServiceSheetsModule.jsx";
 import WeeklyReportsModule from "./WeeklyReportsModule.jsx";
 import OperationsModule from "./OperationsModule.jsx";
+import ClientsModule from "./ClientsModule.jsx";
 import { setTitle } from "../utils/setTitle";
 import {
   TbBox,
@@ -18,10 +19,10 @@ import {
   TbCalendarMonth,
   TbFileInvoice,
   TbReceipt2,
-  TbRouteSquare,
   TbReportAnalytics,
   TbClipboardText,
-  TbUsers
+  TbUsers,
+  TbBuilding
 } from "react-icons/tb";
 
 export default function Dashboard({ worker, onLogout }) {
@@ -34,11 +35,12 @@ export default function Dashboard({ worker, onLogout }) {
       admin: "/admin",
       forms: "/forms",
       inventory: "/inventory",
+      clients: "/clients",
       quotes: "/quotes",
       operations: "/operations",
       invoices: "/invoices",
       serviceSheets: "/service-sheets",
-      weeklyReports: "/weekly-reports",
+      weeklyReports: "/general-reports",
       calendar: "/calendar"
     }),
     []
@@ -93,11 +95,12 @@ export default function Dashboard({ worker, onLogout }) {
       admin: "Admin Panel",
       forms: "Formularios",
       inventory: "Inventario",
+      clients: "Clientes",
       quotes: "Cotizaciones",
       operations: "Operaciones",
       invoices: "Facturación",
       serviceSheets: "Hoja de Servicios",
-      weeklyReports: "Bitácora Semanal",
+      weeklyReports: "Reportes Generales",
       calendar: "Calendario"
     }),
     []
@@ -182,17 +185,17 @@ export default function Dashboard({ worker, onLogout }) {
         icon: <TbClipboardText />
       },
       {
-        key: "serviceSheets",
-        title: "Hoja de Servicios",
-        desc: "Rutas · Ubicación · Cantidad · Precio",
+        key: "clients",
+        title: "Clientes",
+        desc: "Catálogo · Historial · Facturación",
         tone: "steel",
         size: "span2",
-        icon: <TbRouteSquare />
+        icon: <TbBuilding />
       },
       {
         key: "weeklyReports",
-        title: "Bitácora Semanal",
-        desc: "Seguimiento · Resumen · Reporte",
+        title: "Reportes Generales",
+        desc: "KPIs · Gráficas · Exportación",
         tone: "navy",
         size: "span2",
         icon: <TbReportAnalytics />
@@ -277,6 +280,13 @@ export default function Dashboard({ worker, onLogout }) {
           </section>
         )}
 
+        {tab === "clients" && (
+          <section className="module">
+            <div className="module-head"></div>
+            <ClientsModule currentWorker={worker} />
+          </section>
+        )}
+
         {tab === "invoices" && (
           <section className="module">
             <div className="module-head"></div>
@@ -310,6 +320,7 @@ export default function Dashboard({ worker, onLogout }) {
           tab !== "inventory" &&
           tab !== "forms" &&
           tab !== "calendar" &&
+          tab !== "clients" &&
           tab !== "quotes" &&
           tab !== "invoices" &&
           tab !== "serviceSheets" &&

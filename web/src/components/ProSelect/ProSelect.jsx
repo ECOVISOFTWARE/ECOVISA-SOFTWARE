@@ -4,20 +4,29 @@ import "./ProSelect.css";
 
 function getOptionsFromChildren(children) {
   const out = [];
+
+  const flattenLabel = (node) => {
+    if (node === null || node === undefined || typeof node === "boolean") return "";
+    if (typeof node === "string" || typeof node === "number") return String(node);
+    if (Array.isArray(node)) return node.map(flattenLabel).join("");
+    if (React.isValidElement(node)) return flattenLabel(node.props?.children);
+    return "";
+  };
+
   React.Children.forEach(children, (ch) => {
     if (!React.isValidElement(ch)) return;
     if (String(ch.type).toLowerCase() !== "option") return;
 
+    const derivedLabel = flattenLabel(ch.props.children).trim();
+
     out.push({
       value: ch.props.value ?? "",
-      label:
-        typeof ch.props.children === "string" || typeof ch.props.children === "number"
-          ? ch.props.children
-          : ch.props.label ?? "",
+      label: derivedLabel || ch.props.label || "",
       disabled: !!ch.props.disabled,
       icon: ch.props.icon ?? null,
     });
   });
+
   return out;
 }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -7,7 +7,6 @@ import QuotePublicPreview from "./pages/QuotePublicPreview";
 
 export default function App() {
   const [worker, setWorker] = useState(null);
-
 
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
@@ -46,11 +45,13 @@ export default function App() {
       <Route path="/forms" element={dashboardElement} />
       <Route path="/forms/:formId" element={dashboardElement} />
       <Route path="/inventory" element={dashboardElement} />
+      <Route path="/clients" element={dashboardElement} />
       <Route path="/quotes" element={dashboardElement} />
       <Route path="/operations" element={dashboardElement} />
       <Route path="/invoices" element={dashboardElement} />
       <Route path="/service-sheets" element={dashboardElement} />
       <Route path="/weekly-reports" element={dashboardElement} />
+      <Route path="/general-reports" element={dashboardElement} />
       <Route path="/calendar" element={dashboardElement} />
       <Route path="/cotizacion/:token" element={<QuotePublicPreview />} />
       <Route path="*" element={<Navigate to="/" replace />} />

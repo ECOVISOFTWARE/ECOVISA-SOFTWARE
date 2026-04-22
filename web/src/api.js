@@ -59,6 +59,11 @@ const worker = (() => {
 }
 
 export async function apiDownload(path, fallbackFileName = "archivo") {
+  const worker = (() => {
+    try { return JSON.parse(localStorage.getItem("worker") || "{}"); }
+    catch { return {}; }
+  })();
+
   const url = (() => {
     if (/^https?:\/\//i.test(path)) return path;
 
@@ -75,13 +80,24 @@ export async function apiDownload(path, fallbackFileName = "archivo") {
 
   console.log("⬇️ apiDownload ->", url);
 
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      ...(worker?.id ? { "X-Worker-Id": worker.id } : {}),
+    },
+  });
 
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
     try {
-      const data = await res.json();
-      message = data?.error || message;
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const data = await res.json();
+        message = data?.error || message;
+      } else {
+        const text = await res.text();
+        message = text || message;
+      }
     } catch (_) {}
     throw new Error(message);
   }
@@ -89,8 +105,8 @@ export async function apiDownload(path, fallbackFileName = "archivo") {
   const blob = await res.blob();
 
   const disposition = res.headers.get("content-disposition") || "";
-  const fileNameMatch = disposition.match(/filename="?([^"]+)"?/i);
-  const fileName = fileNameMatch?.[1] || fallbackFileName;
+  const fileNameMatch = disposition.match(/filename\*?=(?:UTF-8'')?"?([^"]+)"?/i);
+  const fileName = decodeURIComponent(fileNameMatch?.[1] || fallbackFileName);
 
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -103,4 +119,6 @@ export async function apiDownload(path, fallbackFileName = "archivo") {
   setTimeout(() => {
     URL.revokeObjectURL(objectUrl);
   }, 2000);
+
+  return { ok: true, fileName };
 }

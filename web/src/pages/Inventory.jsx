@@ -16,7 +16,6 @@ import {
   TbRefresh,
   TbDotsVertical,
   TbUserCircle,
-  TbCurrencyDollar,
   TbEdit,
   TbTrash,
   TbX,
@@ -101,7 +100,6 @@ function formatActivityDate(dt) {
 function stockMovementUI(m) {
   const type = String(m?.movement_type || m?.type || "").toUpperCase();
   const qty = Number(m?.qty || 0);
-  const total = Number(m?.line_total || 0);
 
   if (type === "IN") {
     return {
@@ -110,7 +108,6 @@ function stockMovementUI(m) {
       title: "Entrada registrada",
       verb: "registró una entrada al inventario",
       impact: `+${qty} unidades`,
-      amount: total > 0 ? MXN.format(total) : null,
     };
   }
 
@@ -121,7 +118,6 @@ function stockMovementUI(m) {
       title: "Salida registrada",
       verb: "registró una salida del inventario",
       impact: `-${qty} unidades`,
-      amount: total > 0 ? MXN.format(total) : null,
     };
   }
 
@@ -131,7 +127,6 @@ function stockMovementUI(m) {
     title: "Movimiento registrado",
     verb: "registró un movimiento",
     impact: `${qty} unidades`,
-    amount: total > 0 ? MXN.format(total) : null,
   };
 }
 /* =========================
@@ -244,6 +239,58 @@ function toTitleCaseLive(value) {
 
 function toSkuUpperLive(value) {
   return String(value ?? "").toLocaleUpperCase("es-MX");
+}
+
+function normalizeSkuBase(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleUpperCase("es-MX");
+}
+
+function buildSkuPrefixFromName(name = "") {
+  const clean = normalizeSkuBase(name);
+  if (!clean) return "PROD";
+
+  const words = clean.split(" ").filter(Boolean);
+
+  if (words.length === 1) {
+    return words[0].slice(0, 4).padEnd(4, "X");
+  }
+
+  if (words.length === 2) {
+    return `${words[0].slice(0, 2)}${words[1].slice(0, 2)}`.padEnd(4, "X");
+  }
+
+  if (words.length === 3) {
+    return `${words[0].slice(0, 2)}${words[1].slice(0, 1)}${words[2].slice(0, 1)}`.padEnd(4, "X");
+  }
+
+  return words
+    .slice(0, 4)
+    .map((w) => w.charAt(0))
+    .join("")
+    .padEnd(4, "X");
+}
+
+function buildNextSkuPreview(name = "", products = []) {
+  const prefix = buildSkuPrefixFromName(name);
+
+  let maxNum = 0;
+
+  for (const p of products || []) {
+    const sku = String(p?.sku || "").trim().toLocaleUpperCase("es-MX");
+    const match = sku.match(new RegExp(`^${prefix}(\\d{4})$`));
+    if (!match) continue;
+
+    const n = Number(match[1] || 0);
+    if (n > maxNum) maxNum = n;
+  }
+
+  return `${prefix}${String(maxNum + 1).padStart(4, "0")}`;
 }
 
 function parseMoneyToNumber(input) {
@@ -1027,7 +1074,7 @@ async function swalApiWrap(fn, { loadingTitle, successTitle } = {}) {
   Main
 ========================= */
 export default function Inventory({ currentWorker }) {
-  const [tab, setTab] = useState("dashboard"); // dashboard | products | stock | movements | analytics
+  const [tab, setTab] = useState("dashboard"); // dashboard | products | stock | movements | analytics(análisis operativo)
 const [loadError, setLoadError] = useState("");
   const [loading, setLoading] = useState(true);
   // data
@@ -1037,18 +1084,14 @@ const [loadError, setLoadError] = useState("");
 const [analytics, setAnalytics] = useState([]);
 const [activity, setActivity] = useState([]);
 
-// ✅ métricas PRO
-const [metrics, setMetrics] = useState(null);
 const [performanceSummary, setPerformanceSummary] = useState(null);
   // ✅ TOP widgets (dashboard pro)
   const [topStock, setTopStock] = useState([]);
   const [topIn, setTopIn] = useState([]);
   const [topOut, setTopOut] = useState([]);
-  const [topValued, setTopValued] = useState([]);
 
   // ✅ 5) Top Entradas + Top Salidas (toggle tipo carrusel)
   const [topIOPane, setTopIOPane] = useState("IN");   // IN | OUT
-  const [aTopIOPane, setATopIOPane] = useState("IN"); // analytics tab
 
 // ui
 const [q, setQ] = useState("");
@@ -1071,12 +1114,11 @@ const [productDraft, setProductDraft] = useState({
   name: "",
   sku: "",
   unit: "pz",
-  cost: "",
-  price: "",
+  stock_min: "",
 });
-
 // ✅ dirty control (producto)
 const [productDirty, setProductDirty] = useState(false);
+const [productSkuTouched, setProductSkuTouched] = useState(false);
 
 // ✅ detalle de movimientos por producto (stock)
 const [stockDetailOpen, setStockDetailOpen] = useState(false);
@@ -1087,6 +1129,14 @@ const [stockMovementRows, setStockMovementRows] = useState([]);
 // ✅ preview profesional de movimiento individual
 const [movementPreviewOpen, setMovementPreviewOpen] = useState(false);
 const [selectedMovement, setSelectedMovement] = useState(null);
+
+// ✅ modal profesional de edición de movimiento
+const [movementEditOpen, setMovementEditOpen] = useState(false);
+const [editingMovementItem, setEditingMovementItem] = useState(null);
+const [movementEditDraft, setMovementEditDraft] = useState({
+  qty: "",
+  reason: "",
+});
 
 const [productPage, setProductPage] = useState(1);
 const [productPageSize, setProductPageSize] = useState(10);
@@ -1102,14 +1152,14 @@ const [cardView, setCardView] = useState({
   io: "pie",
   topIn: "bar",
   topOut: "bar",
-  topValued: "line",
+  lowStock: "line",
 
   // analytics tab
   perf30: "line",
   aRisk: "pie",
-  aMargin: "bar",
   aRotation: "bar",
   aDead: "bar",
+  aCoverage: "bar",
 });
 
 
@@ -1118,12 +1168,11 @@ const [cardRange, setCardRange] = useState({
   io: "30",
   topIn: "30",
   topOut: "30",
-  topValued: "30",
+  lowStock: "30",
 
   // analytics tab
   perf30: "30",
   aTopIO: "30",
-  aValued: "30",
 
   // historial
   movements: "30",
@@ -1163,7 +1212,7 @@ const allowed = useMemo(
 
 /* =========================
    ✅ CARGA PRINCIPAL (loadAll)
-   - days controla analytics/metrics/top/activity
+   - days controla analytics/performanceSummary/top/activity
    - lightweight=true evita recargar products/stock/policies cada vez
 ========================= */
 async function loadAll({ days = 30, lightweight = false } = {}) {
@@ -1189,7 +1238,6 @@ async function loadAll({ days = 30, lightweight = false } = {}) {
 
     // dashboard/analytics depende del periodo
     { key: "analytics", url: `/api/inventory/analytics?days=${days}` },
-    { key: "metrics", url: `/api/inventory/metrics?days=${days}`, optional: true },
     { key: "performanceSummary", url: `/api/inventory/performance-summary?days=${days}`, optional: true },
 
     { key: "activity", url: `/api/inventory/activity?days=${days}&limit=25&offset=0` },
@@ -1197,7 +1245,6 @@ async function loadAll({ days = 30, lightweight = false } = {}) {
     { key: "topStock", url: "/api/inventory/top-stock?limit=8" },
     { key: "topIn", url: `/api/inventory/top-in?days=${days}&limit=8` },
     { key: "topOut", url: `/api/inventory/top-out?days=${days}&limit=8` },
-    { key: "topValued", url: `/api/inventory/top-valued?days=${days}&limit=8` },
   ];
   try {
     const results = await Promise.allSettled(endpoints.map((e) => apiFetch(e.url)));
@@ -1237,14 +1284,12 @@ async function loadAll({ days = 30, lightweight = false } = {}) {
     }
 
     setAnalytics(byKey.analytics || []);
-    setMetrics(byKey.metrics || null);
     setPerformanceSummary(byKey.performanceSummary || null);
     setActivity(byKey.activity || []);
 
     setTopStock(byKey.topStock || []);
     setTopIn(byKey.topIn || []);
     setTopOut(byKey.topOut || []);
-    setTopValued(byKey.topValued || []);
   } finally {
     setLoading(false);
   }
@@ -1328,6 +1373,8 @@ es.onmessage = (ev) => {
     // ✅ recarga datos (stock / productos / actividad)
     if (
       msg.type === "MOVEMENT_CREATED" ||
+      msg.type === "MOVEMENT_UPDATED" ||
+      msg.type === "MOVEMENT_DELETED" ||
       msg.type === "PRODUCT_CREATED" ||
       msg.type === "PRODUCT_DELETED" ||
       msg.type === "LOW_STOCK"
@@ -1368,8 +1415,6 @@ es.onmessage = (ev) => {
     const last = analytics || [];
     const sumIn = last.reduce((a, x) => a + Number(x.qty_in || 0), 0);
     const sumOut = last.reduce((a, x) => a + Number(x.qty_out || 0), 0);
-    const valIn = last.reduce((a, x) => a + Number(x.value_in || 0), 0);
-    const valOut = last.reduce((a, x) => a + Number(x.value_out || 0), 0);
 
     // spark
     const sparkIn = last.map((x) => Number(x.qty_in || 0));
@@ -1380,8 +1425,6 @@ es.onmessage = (ev) => {
       totalStock,
       sumIn,
       sumOut,
-      valIn,
-      valOut,
       sparkIn,
       sparkOut,
     };
@@ -1449,8 +1492,6 @@ const productRows = useMemo(() => {
       name: p.name || "",
       sku: p.sku || "",
       unit: p.unit || "",
-      cost: Number(p.cost || 0),
-      price: Number(p.price || 0),
       stock: Number(st || 0),
       stock_min: Number(p.stock_min || 0),
       _raw: p,
@@ -1496,27 +1537,13 @@ const low = Number(st) <= Number(row._raw?.stock_min || 0);
       render: (row) => <span className="invSkuPill invSkuPillPro">{row.sku || "—"}</span>,
     },
     {
-      key: "cost",
-      label: "Costo",
-      align: "center",
-      width: 150,
-      render: (row) => <span className="invMoneyText">{MXN.format(Number(row.cost || 0))}</span>,
-    },
-    {
-      key: "price",
-      label: "Precio venta",
-      align: "center",
-      width: 160,
-      render: (row) => <span className="invMoneyText strong">{MXN.format(Number(row.price || 0))}</span>,
-    },
-    {
       key: "stock",
       label: "Stock",
       align: "center",
       width: 130,
       render: (row) => {
-const st = Number(row.stock || 0);
-const low = st <= Number(row.stock_min || 0);
+        const st = Number(row.stock || 0);
+        const low = st <= Number(row.stock_min || 0);
         return <span className={`invStockPill invStockPillPro ${low ? "low" : "ok"}`}>{st}</span>;
       },
     },
@@ -1691,20 +1718,25 @@ const stockColumns = useMemo(
 );
 const dataGridSx = useMemo(() => ({}), []);
 
-  function openMovement(type) {
-    setMovementType(type);
-    setMovementReason("");
-    setMovementItems([{ product_id: "", qty: 1, unit_cost: 0 }]);
-    setMovementOpen(true);
-  }
+function openMovement(type) {
+  setMovementType(type);
+  setMovementReason("");
+  setMovementItems([{ product_id: "", qty: 1 }]);
+  setMovementOpen(true);
+}
 
 function addMovementRow() {
   setMovementDirty(true);
-  setMovementItems((prev) => [...prev, { product_id: "", qty: 1, unit_cost: 0 }]);
+  setMovementItems((prev) => [...prev, { product_id: "", qty: 1 }]);
 }
 function updateMovementRow(i, key, val) {
   setMovementDirty(true);
-  setMovementItems((prev) => prev.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
+  setMovementItems((prev) =>
+    prev.map((row, idx) => {
+      if (idx !== i) return row;
+      return { ...row, [key]: val };
+    })
+  );
 }
 function removeMovementRow(i) {
   setMovementDirty(true);
@@ -1716,7 +1748,7 @@ async function saveMovement() {
     .map((it) => ({
       product_id: it.product_id,
       qty: Number(it.qty || 0),
-      unit_cost: parseMoneyToNumber(it.unit_cost),
+      unit_cost: 0,
     }))
     .filter((x) => x.product_id && x.qty > 0);
 
@@ -1760,11 +1792,8 @@ async function saveMovement() {
       }
     );
   } catch (e) {
-    // ✅ si backend detecta insuficiente (400)
     const msg = String(e?.message || "");
-    const raw = e?.raw || null;
 
-    // si tu apiFetch no trae raw, igual lo cubrimos por texto
     if (msg.includes("INSUFFICIENT_STOCK")) {
       await Swal.fire({
         icon: "warning",
@@ -1782,7 +1811,6 @@ async function saveMovement() {
       return;
     }
 
-    // fallback normal (swalApiWrap ya muestra error)
     return;
   }
 
@@ -1826,35 +1854,42 @@ function openCreateProduct() {
   setProductMode("create");
   setEditingProductId(null);
   setProductDirty(false);
+  setProductSkuTouched(false);
 
   setProductDraft({
     name: "",
     sku: "",
     unit: "pz",
-    cost: "",
-    price: "",
+    stock_min: "",
   });
 
   setProductOpen(true);
 }
-
 function openEditProduct(p) {
   if (!p?.id) return;
 
   setProductMode("edit");
   setEditingProductId(p.id);
   setProductDirty(false);
+  setProductSkuTouched(true);
 
   setProductDraft({
     name: p.name || "",
     sku: p.sku || "",
     unit: p.unit || "pz",
-    cost: String(p.cost ?? ""),
-    price: String(p.price ?? ""),
+    stock_min: String(p.stock_min ?? ""),
   });
 
   setProductOpen(true);
 }
+async function loadStockMovementsForProduct(productId) {
+  const res = await apiFetch(
+    `/api/inventory/stock-movements/${encodeURIComponent(productId)}?limit=100&offset=0`
+  );
+
+  setStockMovementRows(Array.isArray(res?.data) ? res.data : []);
+}
+
 async function openStockMovements(row) {
   const productId = row?.id || row?.product_id;
 
@@ -1876,11 +1911,7 @@ async function openStockMovements(row) {
   setStockDetailOpen(true);
 
   try {
-    const res = await apiFetch(
-      `/api/inventory/stock-movements/${encodeURIComponent(productId)}?limit=100&offset=0`
-    );
-
-    setStockMovementRows(Array.isArray(res?.data) ? res.data : []);
+    await loadStockMovementsForProduct(productId);
   } catch (e) {
     await Swal.fire({
       icon: "error",
@@ -1899,6 +1930,114 @@ function openMovementPreview(m) {
   setMovementPreviewOpen(true);
 }
 
+function editStockMovementItem(m) {
+  if (!m?.item_id) return;
+
+  setEditingMovementItem(m);
+  setMovementEditDraft({
+    qty: String(Number(m.qty || 0) || ""),
+    reason: String(m.movement_reason || m.reason || ""),
+  });
+  setMovementEditOpen(true);
+}
+
+async function saveEditedStockMovementItem() {
+  if (!editingMovementItem?.item_id) return;
+
+  const qty = Number(movementEditDraft.qty || 0);
+  const reason = String(movementEditDraft.reason || "").trim();
+
+  if (!qty || qty <= 0) {
+    await Swal.fire({
+      icon: "info",
+      title: "Cantidad inválida",
+      text: "La cantidad debe ser mayor a 0.",
+      heightAuto: false,
+    });
+    return;
+  }
+
+  const ok = await swalConfirm({
+    title: "Guardar cambios",
+    text: "¿Deseas actualizar este movimiento?",
+    confirmText: "Guardar",
+    icon: "question",
+  });
+  if (!ok) return;
+
+  await swalApiWrap(
+    () =>
+      apiFetch(`/api/inventory/movement-items/${editingMovementItem.item_id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          qty,
+          reason,
+          updated_by: currentWorker?.id || null,
+        }),
+      }),
+    {
+      loadingTitle: "Guardando movimiento…",
+      successTitle: "Movimiento actualizado",
+    }
+  );
+
+  setMovementEditOpen(false);
+  setEditingMovementItem(null);
+  setMovementEditDraft({ qty: "", reason: "" });
+
+  setMovementPreviewOpen(false);
+  setSelectedMovement(null);
+
+  await loadAll();
+
+  if (selectedStockProduct?.id || selectedStockProduct?.product_id) {
+    await loadStockMovementsForProduct(
+      selectedStockProduct?.id || selectedStockProduct?.product_id
+    );
+  }
+}
+
+function closeMovementEditModal() {
+  setMovementEditOpen(false);
+  setEditingMovementItem(null);
+  setMovementEditDraft({ qty: "", reason: "" });
+}
+async function deleteStockMovementItem(m) {
+  if (!m?.item_id) return;
+
+  const ok = await swalConfirm({
+    title: "Eliminar movimiento",
+    text: "¿Seguro que deseas eliminar esta partida del inventario?",
+    confirmText: "Eliminar",
+    icon: "warning",
+  });
+
+  if (!ok) return;
+
+  await swalApiWrap(
+    () =>
+      apiFetch(`/api/inventory/movement-items/${m.item_id}`, {
+        method: "DELETE",
+        body: JSON.stringify({
+          deleted_by: currentWorker?.id || null,
+        }),
+      }),
+    {
+      loadingTitle: "Eliminando movimiento…",
+      successTitle: "Movimiento eliminado",
+    }
+  );
+
+  setMovementPreviewOpen(false);
+  setSelectedMovement(null);
+
+  await loadAll();
+
+  if (selectedStockProduct?.id || selectedStockProduct?.product_id) {
+    await loadStockMovementsForProduct(selectedStockProduct?.id || selectedStockProduct?.product_id);
+  }
+} 
+
 const movementPreview = useMemo(() => {
   if (!selectedMovement) return null;
 
@@ -1908,8 +2047,6 @@ const movementPreview = useMemo(() => {
   ).toUpperCase();
 
   const qty = Number(selectedMovement?.qty || 0);
-  const unitCost = Number(selectedMovement?.unit_cost || 0);
-  const total = Number(selectedMovement?.line_total || 0);
 
   const currentStock = Number(selectedStockProduct?.stock || 0);
   const stockMin = Number(selectedStockProduct?.stock_min || 0);
@@ -2022,8 +2159,6 @@ const movementPreview = useMemo(() => {
   return {
     ui,
     qty,
-    unitCost,
-    total,
     currentStock,
     stockMin,
     who,
@@ -2039,12 +2174,10 @@ const movementPreview = useMemo(() => {
 }, [selectedMovement, selectedStockProduct]);
 
 async function saveProduct() {
-
   const name = String(productDraft.name || "").trim();
   const sku = String(productDraft.sku || "").trim();
   const unit = productDraft.unit || "pz";
-  const cost = parseMoneyToNumber(productDraft.cost);
-  const price = parseMoneyToNumber(productDraft.price);
+  const stock_min = parseMoneyToNumber(productDraft.stock_min);
 
   const isEdit = productMode === "edit" && !!editingProductId;
 
@@ -2082,10 +2215,9 @@ async function saveProduct() {
             name,
             sku,
             unit,
-            cost,
-            price,
+            stock_min,
             updated_by: currentWorker?.id || null,
-            created_by: currentWorker?.id || null, // por si backend lo ignora en PUT
+            created_by: currentWorker?.id || null,
           }),
         }
       ),
@@ -2095,9 +2227,7 @@ async function saveProduct() {
     }
   );
 
-  // ✅ esto refresca productos, stock, top, metrics, activity = cards en tiempo real
   await loadAll();
-
   setTab("products");
 }
 /* =========================
@@ -2140,21 +2270,21 @@ const movementModalTotals = useMemo(() => {
   const cleanItems = (movementItems || []).map((it) => {
     const product = (products || []).find((p) => String(p.id) === String(it.product_id));
     const qty = Number(it.qty || 0);
-    const unitCost = parseMoneyToNumber(it.unit_cost);
-    const lineTotal = qty * unitCost;
+    const unitValue = 0;
+    const lineTotal = 0;
 
     return {
       ...it,
       product,
       qty,
-      unitCost,
+      unitValue,
       lineTotal,
     };
   });
 
   const totalLines = cleanItems.filter((x) => x.product_id).length;
   const totalQty = cleanItems.reduce((a, x) => a + Number(x.qty || 0), 0);
-  const totalAmount = cleanItems.reduce((a, x) => a + Number(x.lineTotal || 0), 0);
+  const totalAmount = 0;
 
   return {
     items: cleanItems,
@@ -2163,19 +2293,14 @@ const movementModalTotals = useMemo(() => {
     totalAmount,
   };
 }, [movementItems, products]);
-
 const productModalSummary = useMemo(() => {
-  const cost = parseMoneyToNumber(productDraft.cost);
-  const price = parseMoneyToNumber(productDraft.price);
-  const margin = Math.max(0, price - cost);
+  const stockMin = parseMoneyToNumber(productDraft.stock_min);
 
   return {
     name: String(productDraft.name || "").trim() || "Producto sin nombre",
     sku: String(productDraft.sku || "").trim() || "Sin SKU",
     unit: productDraft.unit || "pz",
-    cost,
-    price,
-    margin,
+    stockMin,
   };
 }, [productDraft]);
 if (!allowed) {
@@ -2200,7 +2325,7 @@ return (
       <TbPackage /> Inventario
     </div>
 <div className="invSub">
-  Dashboard · Productos · Stock · Movimientos · Rendimiento ejecutivo
+  Dashboard · Productos · Stock · Movimientos · Rendimiento operativo
 </div>
   </div>
 
@@ -2240,7 +2365,7 @@ return (
           Stock
         </button>
         <button className={`invTab ${tab === "analytics" ? "on" : ""}`} onClick={() => setTab("analytics")}>
-          Rendimientos
+          Análisis
         </button>
         <button className={`invTab ${tab === "movements" ? "on" : ""}`} onClick={() => setTab("movements")}>
           Historial
@@ -2305,15 +2430,13 @@ return (
   <div className="invKpiTileSub">Movimientos OUT</div>
 </div>
 
-      <div className="invKpiTile toneMoney">
+      <div className="invKpiTile toneOps">
         <div className="invKpiTileTop">
-          <div className="invKpiTileTitle">VALOR MOVIDO (30 DÍAS)</div>
-          <div className="invKpiTileIcon"><TbCurrencyDollar /></div>
+          <div className="invKpiTileTitle">PRODUCTOS CON STOCK BAJO</div>
+          <div className="invKpiTileIcon"><TbAlertTriangle /></div>
         </div>
-        <div className="invKpiTileValue">
-          ${Math.round((totals.valIn || 0) + (totals.valOut || 0)).toLocaleString()}
-        </div>
-        <div className="invKpiTileSub">Entradas + Salidas</div>
+        <div className="invKpiTileValue">{stockStats.lowCount}</div>
+        <div className="invKpiTileSub">Requieren atención</div>
       </div>
     </div>
 
@@ -2397,15 +2520,15 @@ return (
   </div>
 
   {/* ========= FILA: Top Valorizados (izq) + Actividad (der) ========= */}
-  <div className="invCard invCol6 invCard--sameHeightPair invCard--topValued">
+  <div className="invCard invCol6 invCard--sameHeightPair invCard--lowStock">
     <div className="invCardTop invCardTopCompact">
       <div>
-        <div className="invCardTitle"><TbCurrencyDollar /> Top Valorizados</div>
-        <div className="invCardSub">Mayor $ movido (periodo) · cambia vista con ⋮</div>
+        <div className="invCardTitle"><TbAlertTriangle /> Productos con stock bajo</div>
+        <div className="invCardSub">Productos que requieren reabastecimiento</div>
       </div>
 
       <CardTopActions
-        id="topValued"
+        id="lowStock"
         openCardMenu={openCardMenu}
         setOpenCardMenu={setOpenCardMenu}
         setView={setView}
@@ -2413,15 +2536,20 @@ return (
     </div>
 
     <RenderCardView
-      view={cardView.topValued}
-      chartTone="purple"
+      view={cardView.lowStock}
+      chartTone="red"
       height={340}
-      items={topValued.map((x) => ({ label: x.name || x.product_name || "-", value: Number(x.value || 0) }))}
-      tableRows={topValued}
+      items={stockRows
+        .filter((x) => Number(x.stock || 0) <= Number(x.stock_min || 0))
+        .slice(0, 8)
+        .map((x) => ({ label: x.name || "-", value: Number(x.stock || 0) }))}
+      tableRows={stockRows
+        .filter((x) => Number(x.stock || 0) <= Number(x.stock_min || 0))
+        .slice(0, 8)}
       tableCols={[
-        { key: "name", label: "Producto", render: (r) => <b>{r.name || r.product_name || "-"}</b> },
-        { key: "qty", label: "Qty", align: "c", render: (r) => Number(r.qty || 0) },
-        { key: "value", label: "$", align: "r", render: (r) => <b>${Math.round(Number(r.value || 0)).toLocaleString()}</b> },
+        { key: "name", label: "Producto", render: (r) => <b>{r.name || "-"}</b> },
+        { key: "sku", label: "SKU", align: "c", render: (r) => r.sku || "-" },
+        { key: "stock", label: "Stock", align: "r", render: (r) => <b>{Number(r.stock || 0)}</b> },
       ]}
     />
   </div>
@@ -2682,32 +2810,7 @@ return (
     ========================= */}
 {tab === "analytics" && (
   <div className="invAnalyticsCol">
-    {/* =========================
-        KPIs EJECUTIVOS COMPACTOS
-    ========================= */}
     <div className="invKpiRow">
-      <div className="invKpiTile toneB">
-        <div className="invKpiTileTop">
-          <div className="invKpiTileTitle">VALOR INVENTARIO</div>
-          <div className="invKpiTileIcon"><TbCurrencyDollar /></div>
-        </div>
-        <div className="invKpiTileValue">
-          {MXN.format(Number(metrics?.total_inventory_value || 0))}
-        </div>
-        <div className="invKpiTileSub">Costo actual acumulado</div>
-      </div>
-
-      <div className="invKpiTile toneMoney">
-        <div className="invKpiTileTop">
-          <div className="invKpiTileTitle">UTILIDAD ESTIMADA</div>
-          <div className="invKpiTileIcon"><TbChartBar /></div>
-        </div>
-        <div className="invKpiTileValue">
-          {MXN.format(Number(metrics?.profit_period_est || 0))}
-        </div>
-        <div className="invKpiTileSub">Periodo seleccionado</div>
-      </div>
-
       <div className="invKpiTile toneOut">
         <div className="invKpiTileTop">
           <div className="invKpiTileTitle">PRODUCTOS CRÍTICOS</div>
@@ -2721,21 +2824,39 @@ return (
 
       <div className="invKpiTile toneA">
         <div className="invKpiTileTop">
-          <div className="invKpiTileTitle">ROTACIÓN</div>
-          <div className="invKpiTileIcon"><TbRefresh /></div>
+          <div className="invKpiTileTitle">SALUDABLES</div>
+          <div className="invKpiTileIcon"><TbPackage /></div>
         </div>
         <div className="invKpiTileValue">
-          {(Number(metrics?.rotation || 0)).toFixed(2)}x
+          {Number(performanceSummary?.status_buckets?.healthy || 0)}
         </div>
-        <div className="invKpiTileSub">Salida / inventario actual</div>
+        <div className="invKpiTileSub">Stock en buen estado</div>
+      </div>
+
+      <div className="invKpiTile toneOps">
+        <div className="invKpiTileTop">
+          <div className="invKpiTileTitle">SIN MOVIMIENTO</div>
+          <div className="invKpiTileIcon"><TbClock /></div>
+        </div>
+        <div className="invKpiTileValue">
+          {Number(performanceSummary?.status_buckets?.dead || 0)}
+        </div>
+        <div className="invKpiTileSub">Productos inmóviles</div>
+      </div>
+
+      <div className="invKpiTile toneB">
+        <div className="invKpiTileTop">
+          <div className="invKpiTileTitle">SOBRESTOCK</div>
+          <div className="invKpiTileIcon"><TbChartBar /></div>
+        </div>
+        <div className="invKpiTileValue">
+          {Number(performanceSummary?.status_buckets?.overstock || 0)}
+        </div>
+        <div className="invKpiTileSub">Cobertura alta</div>
       </div>
     </div>
 
-    {/* =========================
-        GRID DE RENDIMIENTOS COMPACTO
-    ========================= */}
     <div className="invDashGridPro">
-      {/* ===== Tendencia principal ===== */}
       <div className="invCard invCol8">
         <div className="invCardTop invCardTopCompact">
           <div>
@@ -2885,7 +3006,6 @@ return (
         )}
       </div>
 
-      {/* ===== Estado operativo ===== */}
       <div className="invCard invCol4">
         <div className="invCardTop invCardTopCompact">
           <div>
@@ -2901,32 +3021,31 @@ return (
           />
         </div>
 
-<RenderCardView
-  view={cardView.aRisk || "pie"}
-  chartTone="red"
-  height={250}
-  items={[
-    { label: "Saludable", value: Number(performanceSummary?.status_buckets?.healthy || 0) },
-    { label: "Crítico", value: Number(performanceSummary?.status_buckets?.critical || 0) },
-    { label: "Sin movimiento", value: Number(performanceSummary?.status_buckets?.dead || 0) },
-    { label: "Sobrestock", value: Number(performanceSummary?.status_buckets?.overstock || 0) },
-  ]}
-  tableRows={[
-    { id: "healthy", label: "Saludable", value: Number(performanceSummary?.status_buckets?.healthy || 0) },
-    { id: "critical", label: "Crítico", value: Number(performanceSummary?.status_buckets?.critical || 0) },
-    { id: "dead", label: "Sin movimiento", value: Number(performanceSummary?.status_buckets?.dead || 0) },
-    { id: "overstock", label: "Sobrestock", value: Number(performanceSummary?.status_buckets?.overstock || 0) },
-  ]}
-  tableCols={[
-    { key: "label", label: "Estado", render: (r) => <b>{r.label}</b> },
-    { key: "value", label: "Cantidad", align: "r", render: (r) => <b>{r.value}</b> },
-  ]}
-  emptyTitle="Sin estado operativo"
-  emptySubtitle="Aún no hay suficiente información para clasificar el inventario del periodo."
-/>
+        <RenderCardView
+          view={cardView.aRisk || "pie"}
+          chartTone="red"
+          height={250}
+          items={[
+            { label: "Saludable", value: Number(performanceSummary?.status_buckets?.healthy || 0) },
+            { label: "Crítico", value: Number(performanceSummary?.status_buckets?.critical || 0) },
+            { label: "Sin movimiento", value: Number(performanceSummary?.status_buckets?.dead || 0) },
+            { label: "Sobrestock", value: Number(performanceSummary?.status_buckets?.overstock || 0) },
+          ]}
+          tableRows={[
+            { id: "healthy", label: "Saludable", value: Number(performanceSummary?.status_buckets?.healthy || 0) },
+            { id: "critical", label: "Crítico", value: Number(performanceSummary?.status_buckets?.critical || 0) },
+            { id: "dead", label: "Sin movimiento", value: Number(performanceSummary?.status_buckets?.dead || 0) },
+            { id: "overstock", label: "Sobrestock", value: Number(performanceSummary?.status_buckets?.overstock || 0) },
+          ]}
+          tableCols={[
+            { key: "label", label: "Estado", render: (r) => <b>{r.label}</b> },
+            { key: "value", label: "Cantidad", align: "r", render: (r) => <b>{r.value}</b> },
+          ]}
+          emptyTitle="Sin estado operativo"
+          emptySubtitle="Aún no hay suficiente información para clasificar el inventario del periodo."
+        />
       </div>
 
-      {/* ===== Top rotación ===== */}
       <div className="invCard invCol4">
         <div className="invCardTop invCardTopCompact">
           <div>
@@ -2942,64 +3061,29 @@ return (
           />
         </div>
 
-<RenderCardView
-  view={cardView.aRotation || "bar"}
-  chartTone="blue"
-  height={210}
-  items={(performanceSummary?.top_rotation_products || []).slice(0, 5).map((x) => ({
-    label: x.name || "-",
-    value: Number(x.rotation_score || 0),
-  }))}
-  tableRows={(performanceSummary?.top_rotation_products || []).slice(0, 5)}
-  tableCols={[
-    { key: "name", label: "Producto", render: (r) => <b>{r.name || "-"}</b> },
-    { key: "rotation_score", label: "Rot.", align: "r", render: (r) => <b>{Number(r.rotation_score || 0).toFixed(2)}</b> },
-  ]}
-  emptyTitle="Sin rotación relevante"
-  emptySubtitle="Todavía no hay salidas suficientes en el periodo para destacar productos con giro."
-/>
+        <RenderCardView
+          view={cardView.aRotation || "bar"}
+          chartTone="blue"
+          height={210}
+          items={(performanceSummary?.top_rotation_products || []).slice(0, 5).map((x) => ({
+            label: x.name || "-",
+            value: Number(x.rotation_score || 0),
+          }))}
+          tableRows={(performanceSummary?.top_rotation_products || []).slice(0, 5)}
+          tableCols={[
+            { key: "name", label: "Producto", render: (r) => <b>{r.name || "-"}</b> },
+            { key: "rotation_score", label: "Rot.", align: "r", render: (r) => <b>{Number(r.rotation_score || 0).toFixed(2)}</b> },
+          ]}
+          emptyTitle="Sin rotación relevante"
+          emptySubtitle="Todavía no hay salidas suficientes en el periodo para destacar productos con giro."
+        />
       </div>
 
-      {/* ===== Top margen ===== */}
       <div className="invCard invCol4">
         <div className="invCardTop invCardTopCompact">
           <div>
-            <div className="invCardTitle"><TbCurrencyDollar /> Top margen</div>
-            <div className="invCardSub">Mayor rentabilidad estimada</div>
-          </div>
-
-          <CardTopActions
-            id="aMargin"
-            openCardMenu={openCardMenu}
-            setOpenCardMenu={setOpenCardMenu}
-            setView={setView}
-          />
-        </div>
-
-<RenderCardView
-  view={cardView.aMargin || "bar"}
-  chartTone="purple"
-  height={210}
-  items={(performanceSummary?.top_margin_products || []).slice(0, 5).map((x) => ({
-    label: x.name || "-",
-    value: Number(x.margin_pct || 0),
-  }))}
-  tableRows={(performanceSummary?.top_margin_products || []).slice(0, 5)}
-  tableCols={[
-    { key: "name", label: "Producto", render: (r) => <b>{r.name || "-"}</b> },
-    { key: "margin_pct", label: "%", align: "r", render: (r) => <b>{Number(r.margin_pct || 0).toFixed(1)}%</b> },
-  ]}
-  emptyTitle="Sin margen calculable"
-  emptySubtitle="Necesitas registrar salidas con costo y precio para mostrar rentabilidad."
-/>
-      </div>
-
-      {/* ===== Inventario inmóvil ===== */}
-      <div className="invCard invCol4">
-        <div className="invCardTop invCardTopCompact">
-          <div>
-            <div className="invCardTitle"><TbClock /> Inventario inmóvil</div>
-            <div className="invCardSub">Capital detenido</div>
+            <div className="invCardTitle"><TbClock /> Sin movimiento</div>
+            <div className="invCardSub">Productos sin actividad reciente</div>
           </div>
 
           <CardTopActions
@@ -3010,22 +3094,55 @@ return (
           />
         </div>
 
-<RenderCardView
-  view={cardView.aDead || "bar"}
-  chartTone="red"
-  height={210}
-  items={(performanceSummary?.dead_stock_products || []).slice(0, 5).map((x) => ({
-    label: x.name || "-",
-    value: Number(x.capital_immobilized || 0),
-  }))}
-  tableRows={(performanceSummary?.dead_stock_products || []).slice(0, 5)}
-  tableCols={[
-    { key: "name", label: "Producto", render: (r) => <b>{r.name || "-"}</b> },
-    { key: "capital_immobilized", label: "$", align: "r", render: (r) => <b>{MXN.format(Number(r.capital_immobilized || 0))}</b> },
-  ]}
-  emptyTitle="Sin inventario inmóvil"
-  emptySubtitle="No hay productos sin movimiento en el periodo seleccionado."
-/>
+        <RenderCardView
+          view={cardView.aDead || "bar"}
+          chartTone="red"
+          height={210}
+          items={(performanceSummary?.dead_stock_products || []).slice(0, 5).map((x) => ({
+            label: x.name || "-",
+            value: Number(x.stock || 0),
+          }))}
+          tableRows={(performanceSummary?.dead_stock_products || []).slice(0, 5)}
+          tableCols={[
+            { key: "name", label: "Producto", render: (r) => <b>{r.name || "-"}</b> },
+            { key: "stock", label: "Stock", align: "r", render: (r) => <b>{Number(r.stock || 0)}</b> },
+          ]}
+          emptyTitle="Sin inventario inmóvil"
+          emptySubtitle="No hay productos sin movimiento en el periodo seleccionado."
+        />
+      </div>
+
+      <div className="invCard invCol4">
+        <div className="invCardTop invCardTopCompact">
+          <div>
+            <div className="invCardTitle"><TbAlertTriangle /> Cobertura baja</div>
+            <div className="invCardSub">Productos que podrían agotarse pronto</div>
+          </div>
+
+          <CardTopActions
+            id="aCoverage"
+            openCardMenu={openCardMenu}
+            setOpenCardMenu={setOpenCardMenu}
+            setView={setView}
+          />
+        </div>
+
+        <RenderCardView
+          view={cardView.aCoverage || "bar"}
+          chartTone="red"
+          height={210}
+          items={(performanceSummary?.low_coverage_products || []).slice(0, 5).map((x) => ({
+            label: x.name || "-",
+            value: Number(x.coverage_days || 0),
+          }))}
+          tableRows={(performanceSummary?.low_coverage_products || []).slice(0, 5)}
+          tableCols={[
+            { key: "name", label: "Producto", render: (r) => <b>{r.name || "-"}</b> },
+            { key: "coverage_days", label: "Días", align: "r", render: (r) => <b>{Number(r.coverage_days || 0).toFixed(1)}</b> },
+          ]}
+          emptyTitle="Sin cobertura baja"
+          emptySubtitle="No hay productos con riesgo inmediato de agotarse."
+        />
       </div>
     </div>
   </div>
@@ -3149,26 +3266,42 @@ return (
             <div className="invProFormGrid">
               <div className="invField invSpan2">
                 <label>Nombre del producto *</label>
-                <input
-                  value={productDraft.name}
-                  onChange={(e) => {
-                    setProductDirty(true);
-                    setProductDraft((p) => ({ ...p, name: toTitleCaseLive(e.target.value) }));
-                  }}
-                  placeholder="Ingresa el nombre del producto"
-                />
+<input
+  value={productDraft.name}
+  onChange={(e) => {
+    const nextName = toTitleCaseLive(e.target.value);
+
+    setProductDirty(true);
+
+    setProductDraft((p) => {
+      const shouldAutofillSku =
+        productMode === "create" &&
+        !productSkuTouched;
+
+      return {
+        ...p,
+        name: nextName,
+        sku: shouldAutofillSku
+          ? buildNextSkuPreview(nextName, products)
+          : p.sku,
+      };
+    });
+  }}
+  placeholder="Ingresa el nombre del producto"
+/>
               </div>
 
               <div className="invField">
                 <label>SKU / Código</label>
-                <input
-                  value={productDraft.sku}
-                  onChange={(e) => {
-                    setProductDirty(true);
-                    setProductDraft((p) => ({ ...p, sku: toSkuUpperLive(e.target.value) }));
-                  }}
-                  placeholder="Ej: SKU12345"
-                />
+<input
+  value={productDraft.sku}
+  onChange={(e) => {
+    setProductDirty(true);
+    setProductSkuTouched(true);
+    setProductDraft((p) => ({ ...p, sku: toSkuUpperLive(e.target.value) }));
+  }}
+  placeholder="Se genera automáticamente"
+/>
               </div>
 
               <div className="invField">
@@ -3196,66 +3329,42 @@ return (
             </div>
           </div>
 
-          <div className="invProCard">
-            <div className="invProCard__title">
-              <TbCurrencyDollar /> Precios y costos
-            </div>
+<div className="invProCard">
+  <div className="invProCard__title">
+    <TbChartBar /> Control del producto
+  </div>
 
-            <div className="invProFormGrid invProFormGrid--3">
-              <div className="invField">
-                <label>Costo unitario</label>
-                <div className="invMoneyWrap">
-                  <span className="invMoneyPrefix">$</span>
-                  <input
-                    className="invMoneyInput"
-                    inputMode="decimal"
-                    value={productDraft.cost}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "" || /^\d*\.?\d*$/.test(v)) {
-                        setProductDirty(true);
-                        setProductDraft((p) => ({ ...p, cost: v }));
-                      }
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
+  <div className="invProFormGrid invProFormGrid--2">
+    <div className="invField">
+      <label>Stock mínimo</label>
+      <input
+        inputMode="decimal"
+        value={productDraft.stock_min}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "" || /^\d*\.?\d*$/.test(v)) {
+            setProductDirty(true);
+            setProductDraft((p) => ({ ...p, stock_min: v }));
+          }
+        }}
+        placeholder="0"
+      />
+    </div>
 
-              <div className="invField">
-                <label>Precio de venta</label>
-                <div className="invMoneyWrap">
-                  <span className="invMoneyPrefix">$</span>
-                  <input
-                    className="invMoneyInput"
-                    inputMode="decimal"
-                    value={productDraft.price}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "" || /^\d*\.?\d*$/.test(v)) {
-                        setProductDirty(true);
-                        setProductDraft((p) => ({ ...p, price: v }));
-                      }
-                    }}
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              <div className="invField">
-                <label>Tipo de captura</label>
-                <ProSelect
-                  value={productMode}
-                  onChange={() => {}}
-                  ariaLabel="tipo-captura"
-                >
-                  <option value={productMode}>
-                    {productMode === "edit" ? "Edición de producto" : "Alta de producto"}
-                  </option>
-                </ProSelect>
-              </div>
-            </div>
-          </div>
+    <div className="invField">
+      <label>Tipo de captura</label>
+      <ProSelect
+        value={productMode}
+        onChange={() => {}}
+        ariaLabel="tipo-captura"
+      >
+        <option value={productMode}>
+          {productMode === "edit" ? "Edición de producto" : "Alta de producto"}
+        </option>
+      </ProSelect>
+    </div>
+  </div>
+</div>
         </div>
 
         <aside className="invProModal__right">
@@ -3267,38 +3376,27 @@ return (
                 <TbPackage />
               </div>
             </div>
+<div className="invProSummary__list">
+  <div className="invProSummary__item">
+    <span>Nombre</span>
+    <b>{productModalSummary.name}</b>
+  </div>
 
-            <div className="invProSummary__list">
-              <div className="invProSummary__item">
-                <span>Nombre</span>
-                <b>{productModalSummary.name}</b>
-              </div>
+  <div className="invProSummary__item">
+    <span>SKU</span>
+    <b>{productModalSummary.sku}</b>
+  </div>
 
-              <div className="invProSummary__item">
-                <span>SKU</span>
-                <b>{productModalSummary.sku}</b>
-              </div>
+  <div className="invProSummary__item">
+    <span>Unidad</span>
+    <b>{productModalSummary.unit}</b>
+  </div>
 
-              <div className="invProSummary__item">
-                <span>Unidad</span>
-                <b>{productModalSummary.unit}</b>
-              </div>
-
-              <div className="invProSummary__item">
-                <span>Costo</span>
-                <b>{MXN.format(productModalSummary.cost)}</b>
-              </div>
-
-              <div className="invProSummary__item">
-                <span>Precio</span>
-                <b>{MXN.format(productModalSummary.price)}</b>
-              </div>
-
-              <div className="invProSummary__item">
-                <span>Margen estimado</span>
-                <b>{MXN.format(productModalSummary.margin)}</b>
-              </div>
-            </div>
+  <div className="invProSummary__item">
+    <span>Stock mínimo</span>
+    <b>{Number(productModalSummary.stockMin || 0)}</b>
+  </div>
+</div>
           </div>
         </aside>
       </div>
@@ -3334,11 +3432,11 @@ return (
           <div className="invProModal__title">
             {movementType === "IN" ? "Registrar entrada" : "Registrar salida"}
           </div>
-          <div className="invProModal__subtitle">
-            {movementType === "IN"
-              ? "Captura ingresos de inventario con detalle por producto."
-              : "Captura salidas de inventario con control por artículo y costo."}
-          </div>
+<div className="invProModal__subtitle">
+  {movementType === "IN"
+    ? "Captura ingresos de inventario con detalle por producto."
+    : "Captura salidas de inventario con control por artículo y cantidad."}
+</div>
         </div>
 
         <div className={`invProModal__badge ${movementType === "IN" ? "isIn" : "isOut"}`}>
@@ -3395,36 +3493,35 @@ return (
               <TbPackage /> Partidas del movimiento
             </div>
 
-            <div className="invProItems">
-              <div className="invProItems__head">
-                <div>Producto</div>
-                <div className="c">Cantidad</div>
-                <div className="c">Costo unitario</div>
-                <div className="c">Importe</div>
-                <div className="c">Acción</div>
-              </div>
+<div className="invProItems">
+<div className="invProItems__head">
+  <div>Producto</div>
+  <div className="c">Cantidad</div>
+  <div className="c">Estado</div>
+  <div className="c">Quitar</div>
+</div>
 
-              {movementItems.map((row, i) => {
-                const qty = Number(row.qty || 0);
-                const unitCost = parseMoneyToNumber(row.unit_cost);
-                const lineTotal = qty * unitCost;
-
+              {movementModalTotals.items.map((row, i) => {
                 return (
                   <div className="invProItems__row" key={i}>
                     <div>
-                      <ProSelect
-                        value={row.product_id}
-                        onChange={(e) => updateMovementRow(i, "product_id", e.target.value)}
-                        ariaLabel={`producto-${i}`}
-                        placeholder="Selecciona producto…"
-                      >
-                        <option value="">Selecciona…</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name} {p.sku ? `· ${p.sku}` : ""}
-                          </option>
-                        ))}
-                      </ProSelect>
+<ProSelect
+  value={row.product_id || ""}
+  onChange={(e) => updateMovementRow(i, "product_id", e.target.value)}
+  ariaLabel={`producto-${i}`}
+  placeholder="Selecciona producto…"
+>
+  <option value="">Selecciona…</option>
+  {products.map((p) => (
+    <option
+      key={p.id}
+      value={p.id}
+      label={`${String(p.name || "").trim() || "Producto sin nombre"}${p.sku ? ` · ${p.sku}` : ""}`}
+    >
+      {String(p.name || "").trim() || "Producto sin nombre"}{p.sku ? ` · ${p.sku}` : ""}
+    </option>
+  ))}
+</ProSelect>
                     </div>
 
                     <div>
@@ -3438,36 +3535,20 @@ return (
                       />
                     </div>
 
-                    <div>
-                      <div className="invMoneyWrap">
-                        <span className="invMoneyPrefix">$</span>
-                        <input
-                          className="c invMoneyInput"
-                          inputMode="decimal"
-                          value={String(row.unit_cost ?? "")}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === "" || /^\d*\.?\d*$/.test(v)) {
-                              updateMovementRow(i, "unit_cost", v);
-                            }
-                          }}
-                          placeholder="0.00"
-                        />
-                      </div>
-                    </div>
-
                     <div className="invProLineTotal">
-                      {lineTotal > 0 ? MXN.format(lineTotal) : "—"}
+                      {row.product_id ? "Listo" : "—"}
                     </div>
 
                     <div className="c">
-                      <button
-                        className="invBtn invGhost"
-                        type="button"
-                        onClick={() => removeMovementRow(i)}
-                      >
-                        Quitar
-                      </button>
+<button
+  type="button"
+  className="invIconTrashBtn"
+  onClick={() => removeMovementRow(i)}
+  title="Quitar partida"
+  aria-label="Quitar partida"
+>
+  <TbTrash />
+</button>
                     </div>
                   </div>
                 );
@@ -3509,11 +3590,6 @@ return (
               <div className="invProSummary__item">
                 <span>Unidades</span>
                 <b>{movementModalTotals.totalQty}</b>
-              </div>
-
-              <div className="invProSummary__item">
-                <span>Total estimado</span>
-                <b>{MXN.format(movementModalTotals.totalAmount)}</b>
               </div>
 
               <div className="invProSummary__item">
@@ -3590,94 +3666,257 @@ return (
             subtitle="Este producto todavía no tiene entradas ni salidas asociadas."
           />
         ) : (
-          <div className="invStockLedger">
-            <div className="invStockLedger__head">
-              <div className="c">Tipo</div>
-              <div className="c">Fecha</div>
-              <div className="c">Responsable</div>
-              <div className="c">Motivo</div>
-              <div className="c">Cantidad</div>
-              <div className="c">Importe</div>
-              <div className="c">Detalle</div>
+<div className="invStockLedgerWrap">
+  <div className="invStockLedger">
+<div className="invStockLedger__head">
+  <div className="c">Tipo</div>
+  <div className="c">Fecha</div>
+  <div className="c">Responsable</div>
+  <div className="c">Motivo</div>
+  <div className="c">Cantidad</div>
+  <div className="c">Estado</div>
+  <div className="c">Acciones</div>
+</div>
+
+<div className="invStockLedger__body">
+  {stockMovementRows.map((m, index) => {
+    const ui = stockMovementUI(m);
+    const who = m.actor_full_name || m.actor_username || "Usuario";
+    const when = formatActivityDate(m.movement_created_at || m.created_at);
+    const reason = m.movement_reason || m.reason || "Sin motivo";
+    const roleText = m.actor_department || m.actor_username || "—";
+
+    return (
+      <div
+        key={m.item_id || m.movement_id || index}
+        className={`invStockLedgerRow tone-${ui.tone}`}
+      >
+        <div className="invStockLedgerCell invStockLedgerCell--type c">
+          <span className={`invStockLedgerTypeBadge ${ui.tone}`}>
+            <span className="invStockLedgerTypeIcon">{ui.icon}</span>
+            <span>{ui.title}</span>
+          </span>
+        </div>
+
+        <div className="invStockLedgerCell c">
+          <div className="invStockLedgerMain">{when}</div>
+        </div>
+
+        <div className="invStockLedgerCell c">
+          <div className="invStockLedgerUser">
+            {m.actor_profile_photo_url ? (
+              <img
+                src={m.actor_profile_photo_url}
+                alt={who}
+                className="invStockLedgerUser__avatar"
+              />
+            ) : (
+              <div className="invStockLedgerUser__avatar ph">
+                <TbUserCircle />
+              </div>
+            )}
+
+            <div className="invStockLedgerUser__text">
+              <div className="invStockLedgerMain">{who}</div>
+              <div className="invStockLedgerSub">{roleText}</div>
             </div>
+          </div>
+        </div>
 
-            <div className="invStockLedger__body">
-              {stockMovementRows.map((m, index) => {
-                const ui = stockMovementUI(m);
-                const who = m.actor_full_name || m.actor_username || "Usuario";
-                const when = formatActivityDate(m.movement_created_at || m.created_at);
-                const reason = m.movement_reason || m.reason || "Sin motivo";
-                const total = Number(m.line_total || 0);
-                const roleText = m.actor_department || m.actor_username || "—";
+        <div className="invStockLedgerCell c">
+          <div className="invStockLedgerReason" title={reason}>
+            {reason}
+          </div>
+        </div>
 
-                return (
-                  <button
-                    type="button"
-                    key={m.item_id || m.movement_id || index}
-                    className={`invStockLedgerRow tone-${ui.tone}`}
-                    onClick={() => openMovementPreview(m)}
-                    title="Abrir detalle del movimiento"
-                  >
-                    <div className="invStockLedgerCell invStockLedgerCell--type c">
-                      <span className={`invStockLedgerTypeBadge ${ui.tone}`}>
-                        <span className="invStockLedgerTypeIcon">{ui.icon}</span>
-                        <span>{ui.title}</span>
-                      </span>
-                    </div>
+        <div className="invStockLedgerCell c">
+          <span className={`invStockImpact ${ui.tone}`}>{ui.impact}</span>
+        </div>
 
-                    <div className="invStockLedgerCell c">
-                      <div className="invStockLedgerMain">{when}</div>
-                    </div>
+        <div className="invStockLedgerCell c">
+          <span className="invSoftMetric">Registrado</span>
+        </div>
 
-                    <div className="invStockLedgerCell c">
-                      <div className="invStockLedgerUser">
-                        {m.actor_profile_photo_url ? (
-                          <img
-                            src={m.actor_profile_photo_url}
-                            alt={who}
-                            className="invStockLedgerUser__avatar"
-                          />
-                        ) : (
-                          <div className="invStockLedgerUser__avatar ph">
-                            <TbUserCircle />
-                          </div>
-                        )}
+        <div className="invStockLedgerCell c">
+          <div className="invRowActions invRowActionsPro invRowActionsLedger">
+            <button
+              type="button"
+              className="invActBtn view"
+              title="Ver detalle"
+              onClick={() => openMovementPreview(m)}
+            >
+              <TbEye />
+            </button>
 
-                        <div className="invStockLedgerUser__text">
-                          <div className="invStockLedgerMain">{who}</div>
-                          <div className="invStockLedgerSub">{roleText}</div>
-                        </div>
-                      </div>
-                    </div>
+            <button
+              type="button"
+              className="invActBtn edit"
+              title="Editar movimiento"
+              onClick={() => editStockMovementItem(m)}
+            >
+              <TbEdit />
+            </button>
 
-                    <div className="invStockLedgerCell c">
-                      <div className="invStockLedgerReason" title={reason}>
-                        {reason}
-                      </div>
-                    </div>
-
-                    <div className="invStockLedgerCell c">
-                      <span className={`invStockImpact ${ui.tone}`}>{ui.impact}</span>
-                    </div>
-
-                    <div className="invStockLedgerCell c">
-                      <span className="invMoneyText strong">
-                        {total > 0 ? MXN.format(total) : "—"}
-                      </span>
-                    </div>
-
-                    <div className="invStockLedgerCell c">
-                      <span className="invStockLedgerViewBtn">
-                        <TbEye />
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <button
+              type="button"
+              className="invActBtn del"
+              title="Eliminar movimiento"
+              onClick={() => deleteStockMovementItem(m)}
+            >
+              <TbTrash />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
+    </div>
           </div>
         )}
       </div>
+    </div>
+    
+  </div>
+</Modal>
+
+<Modal
+  open={movementEditOpen}
+  title="Editar movimiento"
+  onClose={closeMovementEditModal}
+  onRequestClose={closeMovementEditModal}
+  modalClassName="invModal--fit invModal--proForm invModal--movementEdit"
+  bodyClassName="invModalBody--proForm"
+>
+  <div className="invProModal invProModal--editMovement">
+    <div className="invProModal__main">
+      <div className="invProModal__header">
+        <div>
+          <div className="invProModal__title">Editar movimiento</div>
+          <div className="invProModal__subtitle">
+            Ajusta la cantidad y el motivo del registro seleccionado.
+          </div>
+        </div>
+
+        <div
+          className={`invProModal__badge ${
+            String(editingMovementItem?.movement_type || editingMovementItem?.type || "").toUpperCase() === "IN"
+              ? "isIn"
+              : "isOut"
+          }`}
+        >
+          {String(editingMovementItem?.movement_type || editingMovementItem?.type || "").toUpperCase() === "IN"
+            ? "Entrada"
+            : "Salida"}
+        </div>
+      </div>
+
+      <div className="invProModal__grid invProModal__grid--editMovement">
+        <div className="invProModal__left">
+          <div className="invProCard">
+            <div className="invProCard__title">
+              <TbEdit /> Ajustes del movimiento
+            </div>
+
+            <div className="invProFormGrid invProFormGrid--1">
+              <div className="invField">
+                <label>Cantidad</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={movementEditDraft.qty}
+                  onChange={(e) =>
+                    setMovementEditDraft((prev) => ({
+                      ...prev,
+                      qty: e.target.value,
+                    }))
+                  }
+                  placeholder="Cantidad"
+                />
+              </div>
+
+              <div className="invField invSpan2">
+                <label>Motivo</label>
+                <input
+                  type="text"
+                  value={movementEditDraft.reason}
+                  onChange={(e) =>
+                    setMovementEditDraft((prev) => ({
+                      ...prev,
+                      reason: e.target.value,
+                    }))
+                  }
+                  placeholder="Describe el motivo del movimiento"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside className="invProModal__right">
+          <div className="invProSummary">
+            <div className="invProSummary__title">Resumen del ajuste</div>
+
+            <div className="invProSummary__media">
+              <div
+                className={`invProSummary__mediaIcon ${
+                  String(editingMovementItem?.movement_type || editingMovementItem?.type || "").toUpperCase() === "IN"
+                    ? "isIn"
+                    : "isOut"
+                }`}
+              >
+                {String(editingMovementItem?.movement_type || editingMovementItem?.type || "").toUpperCase() === "IN" ? (
+                  <TbArrowBigUpLines />
+                ) : (
+                  <TbArrowBigDownLines />
+                )}
+              </div>
+            </div>
+
+            <div className="invProSummary__list">
+              <div className="invProSummary__item">
+                <span>Producto</span>
+                <b>{selectedStockProduct?.name || "Producto"}</b>
+              </div>
+
+              <div className="invProSummary__item">
+                <span>SKU</span>
+                <b>{selectedStockProduct?.sku || "Sin SKU"}</b>
+              </div>
+
+              <div className="invProSummary__item">
+                <span>Tipo</span>
+                <b>
+                  {String(editingMovementItem?.movement_type || editingMovementItem?.type || "").toUpperCase() === "IN"
+                    ? "Entrada"
+                    : "Salida"}
+                </b>
+              </div>
+
+              <div className="invProSummary__item">
+                <span>Nueva cantidad</span>
+                <b>{Number(movementEditDraft.qty || 0)}</b>
+              </div>
+
+              <div className="invProSummary__item">
+                <span>Motivo</span>
+                <b>{String(movementEditDraft.reason || "").trim() || "Sin motivo"}</b>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div className="invProModal__footer">
+      <button className="invBtn invGhost" type="button" onClick={closeMovementEditModal}>
+        Cancelar
+      </button>
+
+      <button className="invBtn invPrimary" type="button" onClick={saveEditedStockMovementItem}>
+        Guardar cambios
+      </button>
     </div>
   </div>
 </Modal>
@@ -3738,49 +3977,45 @@ return (
             </div>
           </div>
 
-          <div className="invMovePreviewKpis">
-            <div className="invMovePreviewKpi">
-              <span className="k">Responsable</span>
-              <span className="v">{movementPreview.who}</span>
-              <span className="s">
-                {movementPreview.username || "—"} {movementPreview.department ? `· ${movementPreview.department}` : ""}
-              </span>
-            </div>
+<div className="invMovePreviewKpis">
+  <div className="invMovePreviewKpi">
+    <span className="k">Responsable</span>
+    <span className="v">{movementPreview.who}</span>
+    <span className="s">
+      {movementPreview.username || "—"} {movementPreview.department ? `· ${movementPreview.department}` : ""}
+    </span>
+  </div>
 
-            <div className="invMovePreviewKpi">
-              <span className="k">Cantidad</span>
-              <span className="v">{movementPreview.qty}</span>
-              <span className="s">Unidades afectadas</span>
-            </div>
+  <div className="invMovePreviewKpi">
+    <span className="k">Cantidad</span>
+    <span className="v">{movementPreview.qty}</span>
+    <span className="s">Unidades afectadas</span>
+  </div>
 
-            <div className="invMovePreviewKpi">
-              <span className="k">Costo unitario</span>
-              <span className="v">
-                {movementPreview.unitCost > 0 ? MXN.format(movementPreview.unitCost) : "—"}
-              </span>
-              <span className="s">Costo capturado</span>
-            </div>
+  <div className="invMovePreviewKpi">
+    <span className="k">Tipo</span>
+    <span className="v">{movementPreview.operationLabel}</span>
+    <span className="s">Clasificación del movimiento</span>
+  </div>
 
-            <div className="invMovePreviewKpi">
-              <span className="k">Importe</span>
-              <span className="v">
-                {movementPreview.total > 0 ? MXN.format(movementPreview.total) : "—"}
-              </span>
-              <span className="s">Valor total del movimiento</span>
-            </div>
+  <div className="invMovePreviewKpi">
+    <span className="k">Fecha</span>
+    <span className="v">{movementPreview.when}</span>
+    <span className="s">Momento del registro</span>
+  </div>
 
-            <div className="invMovePreviewKpi">
-              <span className="k">Stock actual</span>
-              <span className="v">{movementPreview.currentStock}</span>
-              <span className="s">Existencia actual</span>
-            </div>
+  <div className="invMovePreviewKpi">
+    <span className="k">Stock actual</span>
+    <span className="v">{movementPreview.currentStock}</span>
+    <span className="s">Existencia actual</span>
+  </div>
 
-            <div className="invMovePreviewKpi">
-              <span className="k">Stock mínimo</span>
-              <span className="v">{movementPreview.stockMin}</span>
-              <span className="s">Umbral configurado</span>
-            </div>
-          </div>
+  <div className="invMovePreviewKpi">
+    <span className="k">Stock mínimo</span>
+    <span className="v">{movementPreview.stockMin}</span>
+    <span className="s">Umbral configurado</span>
+  </div>
+</div>
 
           <div className="invMovePreviewReasonBox">
             <div className="invMovePreviewReasonBox__label">Motivo del movimiento</div>

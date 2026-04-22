@@ -9,14 +9,16 @@
   const formsRoutes = require("./routes/forms");
   const inventoryRoutes = require("./routes/inventory");
   const quotesRoutes = require("./routes/quotes");
+  const clientsRoutes = require("./routes/clients");
   const servicesRoutes = require("./routes/services");
   const invoicesRoutes = require("./routes/invoices");
   const serviceSheetsRoutes = require("./routes/serviceSheets");
-const weeklyReportsRoutes  = require("./routes/weeklyReports");
-const operationsRoutes     = require("./routes/operations");
-const branchesRoutes       = require("./routes/branches");
-const notificationsRoutes  = require("./routes/notifications");
-const salesRoutes          = require("./routes/sales");
+  const weeklyReportsRoutes  = require("./routes/weeklyReports");
+  const generalReportsRoutes = require("./routes/generalReports");
+  const operationsRoutes     = require("./routes/operations");
+  const branchesRoutes       = require("./routes/branches");
+  const notificationsRoutes  = require("./routes/notifications");
+  const salesRoutes          = require("./routes/sales");
   const gpsRoutes = require("./routes/gps");
   const calendarRoutes = require("./routes/calendar");
   const workersRoutes = require("./routes/workers");
@@ -134,15 +136,27 @@ const salesRoutes          = require("./routes/sales");
     });
   });
 
-  app.use("/api/quotes", quotesRoutes);
-  app.use("/api/services", servicesRoutes);
+app.use("/api/quotes", quotesRoutes);
+
+app.use(
+  "/api/clients",
+  (req, res, next) => {
+    console.log("✅ HIT /api/clients ->", req.method, req.url);
+    console.log("✅ clients router file mounted from:", require.resolve("./routes/clients"));
+    next();
+  },
+  clientsRoutes
+);
+
+app.use("/api/services", servicesRoutes);
   app.use("/api/invoices", invoicesRoutes);
   app.use("/api/service-sheets", serviceSheetsRoutes);
-app.use("/api/weekly-reports", weeklyReportsRoutes);
-app.use("/api/operations", operationsRoutes);
-app.use("/api/branches", branchesRoutes);
-app.use("/api/notifications", notificationsRoutes);
-app.use("/api/sales", salesRoutes);
+  app.use("/api/weekly-reports", weeklyReportsRoutes);
+  app.use("/api/general-reports", generalReportsRoutes);
+  app.use("/api/operations", operationsRoutes);
+  app.use("/api/branches", branchesRoutes);
+  app.use("/api/notifications", notificationsRoutes);
+  app.use("/api/sales", salesRoutes);
   app.use("/api/gps", gpsRoutes);
   app.use("/api/calendar", calendarRoutes);
   app.use("/api/workers", workersRoutes);
@@ -320,9 +334,42 @@ return res.json({
   ========================= */
   const port = Number(process.env.PORT || 3001);
 
-  app.listen(port, "0.0.0.0", () => {
-    console.log("Server running on port", port);
-    console.log("NODE_ENV =", process.env.NODE_ENV);
-    console.log("Server file =", __filename);
-    console.log("Serving static from =", webBuild);
-  });
+const server = app.listen(port, "0.0.0.0", () => {
+  console.log("Server running on port", port);
+  console.log("NODE_ENV =", process.env.NODE_ENV);
+  console.log("Server file =", __filename);
+  console.log("Serving static from =", webBuild);
+  console.log("server.listening =", server.listening);
+});
+
+server.keepAliveTimeout = 120000;
+server.headersTimeout = 120000;
+
+// ✅ Mantener vivo el event loop en dev y además detectar quién cierra el proceso
+const __DEV_KEEPALIVE__ = setInterval(() => {
+  // noop
+}, 30000);
+
+process.on("beforeExit", (code) => {
+  console.error("⚠️ process.beforeExit code =", code);
+});
+
+process.on("exit", (code) => {
+  console.error("⚠️ process.exit code =", code);
+});
+
+process.on("SIGINT", () => {
+  console.error("⚠️ SIGINT recibido");
+});
+
+process.on("SIGTERM", () => {
+  console.error("⚠️ SIGTERM recibido");
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("🔥 uncaughtException:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("🔥 unhandledRejection:", reason);
+});

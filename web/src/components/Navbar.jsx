@@ -13,7 +13,8 @@ import {
   TbUserCircle,
   TbReceipt2,
   TbClipboardList,
-  TbReportAnalytics
+  TbReportAnalytics,
+  TbBuilding
 } from "react-icons/tb";
 import { apiFetch, API_BASE } from "../api.js";
 import "./Navbar.css";
@@ -24,6 +25,7 @@ const ICONS = {
   admin: <TbUsers />,
   forms: <TbClipboardText />,
   inventory: <TbBox />,
+  clients: <TbBuilding />,
   operations: <TbTruck />,
   calendar: <TbCalendarMonth />,
   quotes: <TbFileInvoice />,
@@ -31,7 +33,6 @@ const ICONS = {
   serviceSheets: <TbClipboardList />,
   weeklyReports: <TbReportAnalytics />
 };
-
 export default function Navbar({ worker, active, onChange, onLogout }) {
 const [mobileOpen, setMobileOpen] = useState(false);
 const navigate = useNavigate();
@@ -42,11 +43,12 @@ const ROUTES = useMemo(() => ({
   admin: "/admin",
   forms: "/forms",
   inventory: "/inventory",
+  clients: "/clients",
   quotes: "/quotes",
   operations: "/operations",
   invoices: "/invoices",
   serviceSheets: "/service-sheets",
-  weeklyReports: "/weekly-reports",
+  weeklyReports: "/general-reports",
   calendar: "/calendar"
 }), []);
 
@@ -129,17 +131,17 @@ const [rawFileType, setRawFileType] = useState("image/jpeg");
 const [crop, setCrop] = useState({ x: 0, y: 0 });
 const [zoom, setZoom] = useState(1);
 const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-const items = useMemo(
+  const items = useMemo(
     () => [
       { key: "home", label: "Inicio" },
       { key: "admin", label: "Admin" },
       { key: "forms", label: "Formularios" },
       { key: "inventory", label: "Inventario" },
+      { key: "clients", label: "Clientes" },
       { key: "quotes", label: "Cotizaciones" },
       { key: "operations", label: "Operaciones" },
       { key: "invoices", label: "Facturación" },
-      { key: "serviceSheets", label: "Hoja de Servicios" },
-      { key: "weeklyReports", label: "Bitácora Semanal" },
+      { key: "weeklyReports", label: "Reportes Generales" },
       { key: "calendar", label: "Calendario" }
     ],
     []
