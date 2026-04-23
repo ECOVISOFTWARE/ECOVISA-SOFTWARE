@@ -22,6 +22,7 @@
   const gpsRoutes = require("./routes/gps");
   const calendarRoutes = require("./routes/calendar");
   const workersRoutes = require("./routes/workers");
+  const pushRoutes = require("./routes/pushSubscriptions");
 
   const { supabaseAdmin } = require("./supabaseAdmin");
 
@@ -160,7 +161,7 @@ app.use("/api/services", servicesRoutes);
   app.use("/api/gps", gpsRoutes);
   app.use("/api/calendar", calendarRoutes);
   app.use("/api/workers", workersRoutes);
-
+  app.use("/api/push", pushRoutes);
   /* =========================
     Debug: lista rutas cargadas
   ========================= */
@@ -332,6 +333,30 @@ return res.json({
   /* =========================
     Start
   ========================= */
+  // ─── Limpieza automática de notificaciones cada 7 días ───────
+  const { supabaseAdmin: _supaForCleanup } = require("./supabaseAdmin");
+
+  async function cleanOldNotifications() {
+    try {
+      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await _supaForCleanup
+        .from("notifications")
+        .delete()
+        .lt("created_at", cutoff);
+      if (error) {
+        console.error("⚠️ cleanOldNotifications error:", error.message);
+      } else {
+        console.log("🧹 Notificaciones antiguas eliminadas (> 7 días):", new Date().toISOString());
+      }
+    } catch (e) {
+      console.error("⚠️ cleanOldNotifications exception:", e.message);
+    }
+  }
+
+  // Ejecutar al arrancar + cada 7 días
+  cleanOldNotifications();
+  setInterval(cleanOldNotifications, 7 * 24 * 60 * 60 * 1000);
+
   const port = Number(process.env.PORT || 3001);
 
 const server = app.listen(port, "0.0.0.0", () => {

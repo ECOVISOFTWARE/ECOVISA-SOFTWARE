@@ -17,6 +17,7 @@ import {
   TbBuilding
 } from "react-icons/tb";
 import { apiFetch, API_BASE } from "../api.js";
+import toast from "react-hot-toast";
 import "./Navbar.css";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -351,10 +352,46 @@ useEffect(() => {
   const [notifications, setNotifications] = useState([]);
 
 
+// ── Web Push: registrar SW y suscribir ────────────────
+  const registerPush = useCallback(async () => {
+    if (!worker?.id) return;
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+
+    try {
+      const reg = await navigator.serviceWorker.register("/sw.js");
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") return;
+
+      const { key } = await apiFetch("/api/push/vapid-public-key");
+      if (!key) return;
+
+      // convertir clave VAPID a Uint8Array
+      const b64 = key.replace(/-/g, "+").replace(/_/g, "/");
+      const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: raw,
+      });
+
+      await apiFetch("/api/push/subscribe", {
+        method: "POST",
+        body: JSON.stringify({ worker_id: worker.id, subscription: sub.toJSON() }),
+      });
+    } catch (e) {
+      console.warn("registerPush error:", e?.message);
+    }
+  }, [worker?.id]);
+
+  useEffect(() => {
+    registerPush();
+  }, [registerPush]);
+
   const fetchNotifications = useCallback(async () => {
     if (!worker?.id) return;
     try {
-      const resp = await apiFetch(`/api/notifications?recipient_id=${worker.id}&limit=40`);
+      const resp = await apiFetch(`/api/notifications?recipient_id=${worker.id}&worker_id=${worker.id}&limit=40`);
       setNotifications(
         (resp?.data || []).map((n) => ({
           ...n,
@@ -394,16 +431,65 @@ useEffect(() => {
     try {
       es = new EventSource(sseUrl);
 
-      es.onmessage = (ev) => {
+es.onmessage = (ev) => {
         try {
           const msg = JSON.parse(ev.data || "{}");
-          // solo recarga cuando hay una notif nueva real
           if (msg.type === "new_notification") {
             fetchNotifications();
+
+            // ── Toast visual ──────────────────────────────
+            toast.custom((t) => (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  background: "#fff",
+                  borderRadius: "14px",
+                  padding: "12px 16px",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                  opacity: t.visible ? 1 : 0,
+                  transition: "opacity 0.2s",
+                  minWidth: "280px",
+                  maxWidth: "420px",
+                }}
+              >
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: "#0ea5a0", display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, fontSize: 20, color: "#fff",
+                }}>
+                  🔔
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: "#0f172a", marginBottom: 2 }}>
+                    {msg.title || "Nueva notificación"}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {msg.message || msg.actor_name || ""}
+                  </div>
+                </div>
+              </div>
+            ), { duration: 5000 });
+
+            // ── Sonido ────────────────────────────────────
+            try {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.frequency.setValueAtTime(880, ctx.currentTime);
+              osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+              gain.gain.setValueAtTime(0.3, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+              osc.start(ctx.currentTime);
+              osc.stop(ctx.currentTime + 0.4);
+            } catch {}
           }
         } catch {}
       };
-
       es.onerror = () => {
         try { es?.close?.(); } catch {}
         // si SSE falla, cae a polling cada 30 seg

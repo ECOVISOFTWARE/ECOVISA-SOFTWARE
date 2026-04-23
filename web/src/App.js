@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Toaster } from "react-hot-toast";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import Login from "./pages/Login";
@@ -38,9 +39,24 @@ export default function App() {
     />
   );
 
-  return (
-    <Routes>
-      <Route path="/" element={dashboardElement} />
+return (
+    <>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            maxWidth: "420px",
+            borderRadius: "14px",
+            padding: "12px 16px",
+            fontSize: "14px",
+            fontWeight: 600,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+          },
+        }}
+      />
+      <Routes>
+        <Route path="/" element={dashboardElement} />
       <Route path="/admin" element={dashboardElement} />
       <Route path="/forms" element={dashboardElement} />
       <Route path="/forms/:formId" element={dashboardElement} />
@@ -54,7 +70,8 @@ export default function App() {
       <Route path="/general-reports" element={dashboardElement} />
       <Route path="/calendar" element={dashboardElement} />
       <Route path="/cotizacion/:token" element={<QuotePublicPreview />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+<Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

@@ -341,7 +341,7 @@ router.delete("/products/:id", async (req, res) => {
    Stock
 ========================= */
 router.get("/stock", async (req, res) => {
-  const { data, error } = await supabaseAdmin.from("v_product_stock").select("*").order("name");
+  const { data, error } = await supabaseAdmin.from("v_product_available").select("*").order("name");
   if (error) return res.status(500).json({ error: error.message });
   res.json({ data });
 });
@@ -893,8 +893,8 @@ router.get("/performance-summary", async (req, res) => {
 
   if (pErr) return res.status(500).json({ error: pErr.message });
 
-  const { data: stockRows, error: sErr } = await supabaseAdmin
-    .from("v_product_stock")
+const { data: stockRows, error: sErr } = await supabaseAdmin
+    .from("v_product_available")
     .select("product_id, name, sku, stock, stock_min, is_low_stock");
 
   if (sErr) return res.status(500).json({ error: sErr.message });

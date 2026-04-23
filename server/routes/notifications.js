@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const { supabaseAdmin } = require("../supabaseAdmin");
 const { branchFilter } = require("../middleware/branchFilter");
+const { sendPushToWorker } = require("./pushSubscriptions");
 
 /* ══════════════════════════════════════════════
    SSE — conexiones activas por worker
@@ -61,7 +62,7 @@ router.get("/stream", (req, res) => {
 async function createNotifications(items) {
   if (!Array.isArray(items) || items.length === 0) return;
 
-  const clean = items
+const clean = items
     .map((item) => ({
       recipient_id: item.recipient_id || null,
       actor_id: item.actor_id || null,
@@ -75,18 +76,17 @@ async function createNotifications(items) {
       branch_id: item.branch_id || null,
       module_key: item.module_key || null,
       action_key: item.action_key || null,
-      related_worker_id: item.related_worker_id || null,
       read: Boolean(item.read),
     }))
     .filter((item) => item.recipient_id);
 
   if (!clean.length) return;
 
-  try {
+try {
     await supabaseAdmin.from("notifications").insert(clean);
 
-    // ✅ Push SSE a cada destinatario conectado en tiempo real
     for (const notif of clean) {
+      // SSE (in-app)
       pushToWorker(notif.recipient_id, {
         type: "new_notification",
         notif_type: notif.type,
@@ -95,6 +95,19 @@ async function createNotifications(items) {
         actor_name: notif.actor_name,
         at: new Date().toISOString(),
       });
+
+      // Web Push (fuera de la app — móvil y escritorio)
+      sendPushToWorker(notif.recipient_id, {
+        title: notif.title || "ECOVISA",
+        body: notif.message || "",
+        icon: "/assets/ECOVISA_ICON.png",
+        badge: "/assets/ECOVISA_ICON.png",
+        data: {
+          entity_type: notif.entity_type,
+          entity_id: notif.entity_id,
+          url: "/",
+        },
+      }).catch(() => {});
     }
   } catch (e) {
     console.error("createNotifications error:", e.message);

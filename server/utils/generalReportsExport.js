@@ -61,8 +61,9 @@ function buildBodyRows(report) {
   const productsCount = Number(report?.inventory?.products_count || 0);
   const movementsCount = Number(report?.inventory?.movements_count || 0);
   const operationsCount = Number(report?.operations?.count || 0);
-  const operationsCompleted = Number(report?.operations?.completed_count || 0);
-  const operationsIncidents = Number(report?.operations?.incident_count || 0);
+const operationsCompleted = Number(report?.operations?.completed_count || 0);
+const operationsIncidents = Number(report?.operations?.incident_count || 0);
+const clientsCount = Number(report?.clients?.count || 0);
 
   return [
     {
@@ -100,13 +101,13 @@ function buildBodyRows(report) {
       amount: null,
       detail: "Total operativo registrado en el rango.",
     },
-    {
-      module: "",
-      indicator: "Operaciones completadas",
-      quantity: operationsCompleted,
-      amount: null,
-      detail: "Operaciones concluidas sin incidencia.",
-    },
+{
+  module: "CLIENTES",
+  indicator: "Clientes nuevos en el período",
+  quantity: clientsCount,
+  amount: null,
+  detail: "Altas de clientes registradas dentro del rango consultado.",
+},
     {
       module: "",
       indicator: "Operaciones con incidencia",
@@ -134,6 +135,98 @@ const ENTERPRISE_CHART_CANVAS = new ChartJSNodeCanvas({
   backgroundColour: "transparent",
 });
 
+const LINE_CHART_W = 560;
+const LINE_CHART_H = 110;
+const LINE_CHART_CANVAS = new ChartJSNodeCanvas({
+  width: LINE_CHART_W,
+  height: LINE_CHART_H,
+  backgroundColour: "transparent",
+});
+
+async function renderLineChart(timeline = [], options = {}) {
+  const {
+    color = "#0ea5a0",
+    color2 = null,
+    valueKey = "amount",
+    valueKey2 = null,
+    label = "Valor",
+    label2 = "",
+  } = options;
+
+  const sorted = [...timeline].sort((a, b) =>
+    String(a.date).localeCompare(String(b.date))
+  );
+  if (sorted.length < 2) return null;
+
+  const labels = sorted.map((p) => String(p.date || "").slice(5));
+  const values = sorted.map((p) => Number(p[valueKey] ?? 0));
+
+  const datasets = [
+    {
+      label,
+      data: values,
+      borderColor: color,
+      backgroundColor: color + "22",
+      fill: true,
+      tension: 0.4,
+      pointRadius: 2,
+      borderWidth: 2,
+    },
+  ];
+
+  if (valueKey2 && color2) {
+    datasets.push({
+      label: label2,
+      data: sorted.map((p) => Number(p[valueKey2] ?? 0)),
+      borderColor: color2,
+      backgroundColor: color2 + "22",
+      fill: false,
+      tension: 0.4,
+      pointRadius: 2,
+      borderWidth: 2,
+    });
+  }
+
+  return LINE_CHART_CANVAS.renderToBuffer({
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: false,
+      animation: false,
+      devicePixelRatio: 2,
+      layout: { padding: { left: 8, right: 8, top: 6, bottom: 4 } },
+      plugins: {
+        legend: {
+          display: datasets.length > 1,
+          labels: {
+            font: { size: 8 },
+            color: "#475569",
+            boxWidth: 10,
+            padding: 8,
+          },
+        },
+        tooltip: { enabled: false },
+      },
+      scales: {
+        x: {
+          ticks: {
+            font: { size: 7 },
+            color: "#64748b",
+            maxRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 12,
+          },
+          grid: { display: false },
+        },
+        y: {
+          ticks: { font: { size: 7 }, color: "#64748b" },
+          grid: { color: "#e2e8f0", lineWidth: 0.5 },
+        },
+      },
+    },
+  });
+}
+
 function fmtDateTime(value) {
   if (!value) return "—";
   const d = new Date(value);
@@ -152,6 +245,235 @@ function safeText(value, fallback = "—") {
   return text || fallback;
 }
 
+// ─── MODULE TABLE CONFIG ───────────────────────────────────────
+function getModuleTableConfig(moduleKey) {
+  switch (moduleKey) {
+    case "inventory_products":
+      return {
+        headers: ["PRODUCTO", "SKU", "STOCK ACT.", "STOCK MÍN.", "BAJO MÍN.", "UNIDAD", "FECHA DE ALTA"],
+        cols: [145, 78, 58, 58, 58, 52, 107],
+      };
+    case "inventory_movements":
+      return {
+        headers: ["MOVIMIENTO", "MOTIVO / DETALLE", "TIPO", "ENTRADAS", "SALIDAS", "ACTOR", "FECHA / HORA"],
+        cols: [108, 120, 44, 58, 58, 82, 86],
+      };
+    case "invoices":
+      return {
+        headers: ["FOLIO", "CLIENTE", "UBIC. / PERÍODO", "CONCEPTOS", "ACTOR", "MONTO"],
+        cols: [58, 108, 110, 130, 78, 72],
+      };
+    case "quotes":
+      return {
+        headers: ["FOLIO", "TÍTULO", "CONCEPTOS", "ESTADO", "ACTOR", "MONTO"],
+        cols: [64, 100, 152, 64, 88, 88],
+      };
+    case "clients":
+      return {
+        headers: ["CLIENTE", "EMPRESA / RFC", "FACT.", "PRODUCTOS / SERVICIOS ADQUIRIDOS", "TOTAL GASTADO", "ALTA"],
+        cols: [108, 108, 36, 170, 78, 56],
+      };
+    case "operations":
+      return {
+        headers: ["OPERACIÓN", "CLIENTE", "ESTADO", "ACTOR", "FECHA / HORA"],
+        cols: [162, 128, 80, 100, 86],
+      };
+    default:
+      return {
+        headers: ["TÍTULO", "DETALLE", "FECHA / HORA"],
+        cols: [170, 260, 126],
+      };
+  }
+}
+
+// ─── MODULE ROW CELLS ──────────────────────────────────────────
+function getModuleRowCells(moduleKey, row) {
+  const getMeta = (label) => {
+    const m = (row.meta || []).find((m) => m.label === label);
+    return m != null ? String(m.value ?? "—") : "—";
+  };
+  switch (moduleKey) {
+    case "inventory_products":
+      return [
+        safeText(row.title),
+        safeText(row.subtitle),
+        String(Number(row.amount ?? 0)),
+        getMeta("Stock mínimo"),
+        getMeta("Stock bajo") === "Sí" ? "⚠ Sí" : "No",
+        getMeta("Unidad"),
+        fmtDateTime(row.created_at),
+      ];
+    case "inventory_movements":
+      return [
+        safeText(row.title),
+        getMeta("Detalle") !== "—" ? getMeta("Detalle") : safeText(row.subtitle),
+        getMeta("Tipo"),
+        getMeta("Tipo") === "Entrada" ? getMeta("Cantidad") : "—",
+        getMeta("Tipo") === "Salida" ? getMeta("Cantidad") : "—",
+        getMeta("Actor"),
+        fmtDateTime(row.created_at),
+      ];
+    case "invoices":
+      return [
+        safeText(row.title),
+        safeText(row.subtitle),
+        getMeta("Ubicación") !== "—"
+          ? `${getMeta("Ubicación")} / ${getMeta("Periodo")}`
+          : getMeta("Periodo"),
+        getMeta("Conceptos"),
+        getMeta("Actor"),
+        row.amount != null ? fmtCur(row.amount) : "—",
+      ];
+    case "quotes":
+      return [
+        safeText(row.title),
+        safeText(row.subtitle),
+        getMeta("Conceptos"),
+        getMeta("Estado"),
+        getMeta("Actor"),
+        row.amount != null ? fmtCur(row.amount) : "—",
+      ];
+    case "clients":
+      return [
+        safeText(row.title),
+        getMeta("Empresa") !== "—"
+          ? `${getMeta("Empresa")}${getMeta("RFC") !== "—" ? " · " + getMeta("RFC") : ""}`
+          : getMeta("RFC"),
+        getMeta("Facturas"),
+        getMeta("Productos / servicios"),
+        fmtCur(getMeta("Total gastado")),
+        fmtDateTime(row.created_at),
+      ];
+    case "operations":
+      return [
+        safeText(row.title),
+        safeText(row.subtitle),
+        getMeta("Estado"),
+        getMeta("Actor"),
+        fmtDateTime(row.created_at),
+      ];
+    default:
+      return [
+        safeText(row.title),
+        safeText(row.subtitle),
+        fmtDateTime(row.created_at),
+      ];
+  }
+}
+
+// ─── MODULE STATS (KPIs + chart config) ───────────────────────
+function getModuleStats(moduleKey, rows, timeline, report) {
+  const sorted = [...(timeline || [])].sort((a, b) =>
+    String(a.date).localeCompare(String(b.date))
+  );
+  const getMeta = (row, label) => {
+    const m = (row.meta || []).find((m) => m.label === label);
+    return m != null ? m.value : null;
+  };
+
+  switch (moduleKey) {
+    case "inventory_products": {
+      const totalStock = rows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+      const lowCount = rows.filter(
+        (r) => String(getMeta(r, "Stock bajo") ?? "") === "Sí"
+      ).length;
+      const netChange = sorted.reduce((acc, p) => acc + Number(p.delta ?? 0), 0);
+      return {
+        kpis: [
+          { label: "Stock total actual", value: String(totalStock), delta: totalStock, bg: "#edf5ff", accent: COMPANY.navy },
+          { label: "Artículos bajo mínimo", value: String(lowCount), delta: -lowCount, bg: lowCount > 0 ? "#fff7ed" : "#f0fdf4", accent: lowCount > 0 ? "#d97706" : "#16a34a" },
+          { label: "Variación neta del período", value: netChange >= 0 ? `+${netChange}` : String(netChange), delta: netChange, bg: netChange >= 0 ? "#f0fdf4" : "#fef2f2", accent: netChange >= 0 ? "#16a34a" : "#dc2626" },
+        ],
+        chartTitle: "EVOLUCIÓN DE STOCK EN EL PERÍODO",
+        lineOptions: { color: COMPANY.navy, valueKey: "delta", label: "Δ Stock (unidades)" },
+      };
+    }
+    case "inventory_movements": {
+      const totalIn = sorted.reduce((acc, p) => acc + Number(p.qty_in ?? 0), 0);
+      const totalOut = sorted.reduce((acc, p) => acc + Number(p.qty_out ?? 0), 0);
+      const net = totalIn - totalOut;
+      return {
+        kpis: [
+          { label: "Total entradas", value: String(totalIn), delta: totalIn, bg: "#f0fdf4", accent: "#16a34a" },
+          { label: "Total salidas", value: String(totalOut), delta: -totalOut, bg: "#fef2f2", accent: "#dc2626" },
+          { label: "Balance neto", value: net >= 0 ? `+${net}` : String(net), delta: net, bg: net >= 0 ? "#f0fdf4" : "#fef2f2", accent: net >= 0 ? "#16a34a" : "#dc2626" },
+        ],
+        chartTitle: "ENTRADAS vs SALIDAS EN EL PERÍODO",
+        lineOptions: { color: "#16a34a", color2: "#dc2626", valueKey: "qty_in", valueKey2: "qty_out", label: "Entradas", label2: "Salidas" },
+      };
+    }
+    case "invoices": {
+      const totalAmount = rows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+      const peak = sorted.length > 0 ? Math.max(...sorted.map((p) => Number(p.amount || 0))) : 0;
+      const firstVal = sorted.length > 0 ? Number(sorted[0].amount || 0) : 0;
+      const lastVal = sorted.length > 0 ? Number(sorted[sorted.length - 1].amount || 0) : 0;
+      const trendDelta = lastVal - firstVal;
+      return {
+        kpis: [
+          { label: "Total facturado", value: fmtCur(totalAmount), delta: totalAmount, bg: "#e8fffb", accent: COMPANY.teal },
+          { label: "Pico de facturación", value: fmtCur(peak), delta: 1, bg: "#fff7ed", accent: "#d97706" },
+          { label: "Tendencia (último vs primero)", value: trendDelta >= 0 ? `+${fmtCur(trendDelta)}` : fmtCur(trendDelta), delta: trendDelta, bg: trendDelta >= 0 ? "#f0fdf4" : "#fef2f2", accent: trendDelta >= 0 ? "#16a34a" : "#dc2626" },
+        ],
+        chartTitle: "TENDENCIA DE FACTURACIÓN EN EL PERÍODO",
+        lineOptions: { color: COMPANY.teal, valueKey: "amount", label: "Facturado $" },
+      };
+    }
+    case "quotes": {
+      const totalAmount = rows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+      const approved = rows.filter((r) => getMeta(r, "Estado") === "Aprobada").length;
+      const peak = sorted.length > 0 ? Math.max(...sorted.map((p) => Number(p.amount || 0))) : 0;
+      return {
+        kpis: [
+          { label: "Monto total cotizado", value: fmtCur(totalAmount), delta: totalAmount, bg: "#edf5ff", accent: COMPANY.navy },
+          { label: "Aprobadas", value: String(approved), delta: approved, bg: "#f0fdf4", accent: "#16a34a" },
+          { label: "Pico de cotización", value: fmtCur(peak), delta: 1, bg: "#fff7ed", accent: "#d97706" },
+        ],
+        chartTitle: "TENDENCIA DE COTIZACIONES EN EL PERÍODO",
+        lineOptions: { color: "#7c3aed", valueKey: "amount", label: "Cotizado $" },
+      };
+    }
+    case "clients": {
+      const totalSpent = rows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+      const withInvoices = rows.filter((r) => Number(getMeta(r, "Facturas") ?? 0) > 0).length;
+      const convRate = Number(report?.clients?.conversion_rate || 0);
+      return {
+        kpis: [
+          { label: "Total facturado a clientes", value: fmtCur(totalSpent), delta: totalSpent, bg: "#edf5ff", accent: COMPANY.navy },
+          { label: "Clientes con facturas", value: `${withInvoices} / ${rows.length}`, delta: withInvoices, bg: "#f0fdf4", accent: "#16a34a" },
+          { label: "Tasa de conversión", value: `${convRate}%`, delta: convRate >= 50 ? 1 : -1, bg: convRate >= 50 ? "#f0fdf4" : "#fff7ed", accent: convRate >= 50 ? "#16a34a" : "#d97706" },
+        ],
+        chartTitle: "TENDENCIA DE FACTURACIÓN (VENTAS DEL PERÍODO)",
+        lineOptions: { color: "#2563eb", valueKey: "amount", label: "Facturado $" },
+      };
+    }
+    case "operations": {
+      const completed = rows.filter((r) => getMeta(r, "Estado") === "Completada").length;
+      const incidents = rows.filter((r) => getMeta(r, "Estado") === "Incidencia").length;
+      const rate = rows.length > 0 ? ((completed / rows.length) * 100).toFixed(1) + "%" : "—";
+      const opsByDay = {};
+      rows.forEach((r) => {
+        const day = String(r.created_at || "").slice(0, 10);
+        if (day) opsByDay[day] = (opsByDay[day] || 0) + 1;
+      });
+      const builtTimeline = Object.entries(opsByDay)
+        .map(([date, amount]) => ({ date, amount }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      return {
+        kpis: [
+          { label: "Completadas", value: String(completed), delta: completed, bg: "#f0fdf4", accent: "#16a34a" },
+          { label: "Con incidencia", value: String(incidents), delta: -incidents, bg: incidents > 0 ? "#fef2f2" : "#f8fafc", accent: incidents > 0 ? "#dc2626" : "#64748b" },
+          { label: "Tasa de éxito", value: rate, delta: completed >= incidents ? 1 : -1, bg: "#edf5ff", accent: COMPANY.navy },
+        ],
+        chartTitle: "OPERACIONES POR DÍA EN EL PERÍODO",
+        lineOptions: { color: "#4f46e5", valueKey: "amount", label: "Operaciones" },
+        builtTimeline,
+      };
+    }
+    default:
+      return { kpis: [], chartTitle: "TENDENCIA DEL PERÍODO", lineOptions: { color: COMPANY.teal, valueKey: "amount" } };
+  }
+}
+
 function groupRowsForModule(moduleKey, rows = []) {
   const map = new Map();
 
@@ -159,13 +481,22 @@ function groupRowsForModule(moduleKey, rows = []) {
     let groupKey = "General";
     let groupLabel = "General";
 
-    if (moduleKey === "inventory") {
+    if (moduleKey === "inventory" || moduleKey === "inventory_movements") {
       const actorMeta = (row.meta || []).find((m) => m.label === "Actor");
       groupKey = actorMeta?.value || "Sin actor";
       groupLabel = `Responsable: ${actorMeta?.value || "Sin actor"}`;
+    } else if (moduleKey === "inventory_products") {
+      const lowMeta = (row.meta || []).find((m) => m.label === "Stock bajo");
+      const isLow = String(lowMeta?.value ?? "") === "Sí";
+      groupKey = isLow ? "bajo_minimo" : "en_stock";
+      groupLabel = isLow ? "⚠ Artículos bajo mínimo" : "✓ Artículos en stock normal";
     } else if (moduleKey === "quotes" || moduleKey === "invoices") {
       groupKey = safeText(row.subtitle, "Sin cliente");
       groupLabel = `Cliente / referencia: ${safeText(row.subtitle, "Sin cliente")}`;
+    } else if (moduleKey === "clients") {
+      const companyMeta = (row.meta || []).find((m) => m.label === "Empresa");
+      groupKey = companyMeta?.value || "Sin empresa";
+      groupLabel = `Empresa: ${companyMeta?.value || "Sin empresa"}`;
     } else if (moduleKey === "operations") {
       const date = row.created_at ? new Date(row.created_at) : null;
       const dayKey = date && !Number.isNaN(date.getTime())
@@ -178,18 +509,13 @@ function groupRowsForModule(moduleKey, rows = []) {
     }
 
     if (!map.has(groupKey)) {
-      map.set(groupKey, {
-        label: groupLabel,
-        rows: [],
-      });
+      map.set(groupKey, { label: groupLabel, rows: [] });
     }
-
     map.get(groupKey).rows.push(row);
   });
 
   return [...map.values()];
 }
-
 function getEnterpriseChartPalette() {
   return [
     "#0F4C81",
@@ -254,6 +580,66 @@ async function renderEnterpriseChart(rows = []) {
 
   return ENTERPRISE_CHART_CANVAS.renderToBuffer(configuration);
 }
+// ─── TREND ICON (barras + flecha curva) ───────────────────────
+function drawTrendIcon(doc, x, y, size = 28, direction = "up") {
+  const isUp = direction === "up";
+  const color = isUp ? "#16a34a" : "#dc2626";
+  const barCount = 5;
+  const barW = size * 0.11;
+  const barGap = size * 0.045;
+  const maxBarH = size * 0.62;
+  const baseY = y + size * 0.78;
+
+  // Dibujar barras
+  for (let i = 0; i < barCount; i++) {
+    const ratio = isUp
+      ? (i + 1) / barCount
+      : 1 - i / barCount;
+    const bH = Math.max(size * 0.12, maxBarH * ratio);
+    const bX = x + i * (barW + barGap);
+    const bY = baseY - bH;
+
+    doc.rect(bX, bY, barW, bH).fill("#0f172a");
+  }
+
+  // Dibujar flecha curva
+  const arrowStartX = x;
+  const arrowStartY = isUp ? baseY - maxBarH * 0.18 : baseY - maxBarH * 0.88;
+  const arrowEndX = x + (barCount - 1) * (barW + barGap) + barW;
+  const arrowEndY = isUp ? baseY - maxBarH * 0.96 : baseY - maxBarH * 0.12;
+
+  const cpX = (arrowStartX + arrowEndX) / 2;
+  const cpY = isUp
+    ? baseY - maxBarH * 0.3
+    : baseY - maxBarH * 0.7;
+
+  doc.save();
+  doc.moveTo(arrowStartX, arrowStartY)
+    .quadraticCurveTo(cpX, cpY, arrowEndX, arrowEndY)
+    .lineWidth(size * 0.09)
+    .strokeColor(color)
+    .stroke();
+
+  // Cabeza de flecha
+  const headSize = size * 0.14;
+  const angle = isUp ? -Math.PI / 4 : Math.PI / 4;
+
+  const hx1 = arrowEndX + Math.cos(angle + Math.PI * 0.6) * headSize;
+  const hy1 = arrowEndY + Math.sin(angle + Math.PI * 0.6) * headSize;
+  const hx2 = arrowEndX + Math.cos(angle - Math.PI * 0.6) * headSize;
+  const hy2 = arrowEndY + Math.sin(angle - Math.PI * 0.6) * headSize;
+
+  doc.moveTo(hx1, hy1)
+    .lineTo(arrowEndX, arrowEndY)
+    .lineTo(hx2, hy2)
+    .lineWidth(size * 0.09)
+    .lineJoin("round")
+    .strokeColor(color)
+    .stroke();
+
+  doc.restore();
+}
+
 function drawEnterpriseFrame(doc, report, pageTitle, sectionLabel) {
   const W = doc.page.width;
   const H = doc.page.height;
@@ -336,8 +722,7 @@ function drawEnterpriseFooter(doc, frame) {
     .text(COMPANY.web, PL + 106, footerY + 30)
     .text(COMPANY.address, PL + 210, footerY + 30, { width: 255 });
 }
-
-async function drawModuleDetailPage(doc, report, moduleKey, title, rows, sectionIndex = 1) {
+async function drawModuleDetailPage(doc, report, moduleKey, title, rows, sectionIndex = 1, timeline = []) {
   doc.addPage();
 
   const frame = drawEnterpriseFrame(
@@ -347,167 +732,254 @@ async function drawModuleDetailPage(doc, report, moduleKey, title, rows, section
     `${title} - Sección #${sectionIndex}`
   );
 
-  const grouped = groupRowsForModule(moduleKey, rows);
   const leftX = frame.left;
   const fullW = frame.contentWidth;
   let y = frame.contentTop;
 
-  const sectionTitleY = y;
+  // ── SECCIÓN TÍTULO ─────────────────────────────────────────────
   doc.font("Helvetica-Bold").fontSize(10).fillColor("#0f172a")
-    .text("DETALLE OPERATIVO", leftX, sectionTitleY);
-
+    .text("DETALLE OPERATIVO", leftX, y);
   y += 18;
 
-  const tableX = leftX;
-  const tableW = fullW;
-  const col1 = 170;
-  const col2 = 260;
-  const col3 = tableW - col1 - col2;
+  // ── TABLA CON COLUMNAS POR MÓDULO ──────────────────────────────
+  const tblCfg = getModuleTableConfig(moduleKey);
+  const cols = tblCfg.cols;
+  const headers = tblCfg.headers;
+  const HEADER_H = 16;
 
-  doc.rect(tableX, y, tableW, 16).fill("#17324D");
-  doc.font("Helvetica-Bold").fontSize(7.4).fillColor("#ffffff")
-    .text("TÍTULO", tableX + 8, y + 5, { width: col1 - 16 })
-    .text("DETALLE", tableX + col1 + 8, y + 5, { width: col2 - 16 })
-    .text("FECHA / HORA", tableX + col1 + col2 + 8, y + 5, { width: col3 - 16 });
+  doc.rect(leftX, y, fullW, HEADER_H).fill("#17324D");
+  let hx = leftX;
+  headers.forEach((head, i) => {
+    doc.font("Helvetica-Bold").fontSize(6.6).fillColor("#ffffff")
+      .text(head, hx + 4, y + 5, { width: (cols[i] || 80) - 8 });
+    hx += cols[i] || 80;
+  });
+  y += HEADER_H;
 
-  y += 16;
+  const tableStartY = y - HEADER_H;
 
+  const normalizedKey =
+    moduleKey === "inventory_products" || moduleKey === "inventory_movements"
+      ? moduleKey
+      : moduleKey;
+  const grouped = groupRowsForModule(normalizedKey, rows);
   const flatRows = grouped.flatMap((group) => [
     { __group: true, label: group.label },
     ...group.rows,
   ]);
-
-  const visibleRows = flatRows.slice(0, 14);
+  const visibleRows = flatRows.slice(0, 12);
 
   visibleRows.forEach((row, idx) => {
-    const rowH = row.__group ? 18 : 22;
+    const rowH = row.__group ? 15 : 18;
     const bg = idx % 2 === 0 ? "#f8fafc" : "#ffffff";
 
-    doc.rect(tableX, y, tableW, rowH).fill(bg);
-    doc.rect(tableX, y + rowH - 0.5, tableW, 0.5).fill("#e2e8f0");
+    doc.rect(leftX, y, fullW, rowH).fill(bg);
+    doc.rect(leftX, y + rowH - 0.4, fullW, 0.4).fill("#e2e8f0");
 
     if (row.__group) {
-      doc.font("Helvetica-Bold").fontSize(7.2).fillColor("#0ea5a0")
-        .text(row.label, tableX + 8, y + 5, { width: tableW - 16 });
+      doc.font("Helvetica-Bold").fontSize(7).fillColor("#0ea5a0")
+        .text(row.label, leftX + 8, y + 4, { width: fullW - 16 });
     } else {
-      doc.font("Helvetica-Bold").fontSize(7.6).fillColor("#0f172a")
-        .text(safeText(row.title), tableX + 8, y + 6, { width: col1 - 16 });
-
-      doc.font("Helvetica").fontSize(7.2).fillColor("#475569")
-        .text(safeText(row.subtitle), tableX + col1 + 8, y + 6, { width: col2 - 16 });
-
-      doc.font("Helvetica").fontSize(7.2).fillColor("#334155")
-        .text(fmtDateTime(row.created_at), tableX + col1 + col2 + 8, y + 6, { width: col3 - 16 });
+      const cellValues = getModuleRowCells(moduleKey, row);
+      let cx = leftX;
+      cellValues.forEach((val, i) => {
+        const isLast = i === cellValues.length - 1;
+        doc.font(i === 0 ? "Helvetica-Bold" : "Helvetica")
+          .fontSize(6.8)
+          .fillColor(i === 0 ? "#0f172a" : "#475569")
+          .text(String(val ?? "—"), cx + 4, y + 5, {
+            width: (cols[i] || 80) - 8,
+            align: isLast ? "right" : "left",
+            ellipsis: true,
+          });
+        cx += cols[i] || 80;
+      });
     }
 
     y += rowH;
   });
 
-  doc.rect(tableX, sectionTitleY + 18, tableW, y - (sectionTitleY + 18))
-    .lineWidth(0.6)
+  doc.rect(leftX, tableStartY, fullW, y - tableStartY)
+    .lineWidth(0.5)
     .strokeColor("#dbe4ee")
     .stroke();
 
-  y += 18;
+  y += 12;
 
-  const stripTitleY = y;
-  doc.rect(leftX, stripTitleY, fullW, 16).fill("#17324D");
-  doc.font("Helvetica-Bold").fontSize(8.2).fillColor("#ffffff")
-    .text("PANORAMA DEL MÓDULO", leftX + 8, stripTitleY + 4, {
-      width: fullW - 16,
-    });
+  // ── PANORAMA STRIP ─────────────────────────────────────────────
+  doc.rect(leftX, y, fullW, 16).fill("#17324D");
+  doc.font("Helvetica-Bold").fontSize(8).fillColor("#ffffff")
+    .text("PANORAMA DEL MÓDULO", leftX + 8, y + 4, { width: fullW - 16 });
+  y += 20;
 
-  y += 24;
+  // ── Stats y timeline efectiva ──────────────────────────────────
+  const moduleStats = getModuleStats(moduleKey, rows, timeline, report);
+  const effectiveTimeline =
+    timeline && timeline.length > 1
+      ? timeline
+      : moduleStats.builtTimeline || [];
 
-  const totalRows = rows.length;
-  const totalAmount = rows.reduce((acc, item) => acc + Number(item.amount || 0), 0);
+  // ── Constantes de layout ───────────────────────────────────────
+  const metricsW = 196;
+  const gapM = 12;
+  const donutSize = 108;
+  const legendGap = 8;
+  const donutAreaW = donutSize + legendGap + 96; // 212
+  const kpiGap = 10;
+  const kpiColW = fullW - metricsW - gapM - donutAreaW - kpiGap; // ~126
+  const panoramaY = y;
 
-  const metricBoxW = 210;
-  const metricGap = 14;
-  const metricsX = leftX;
-  const chartAreaX = metricsX + metricBoxW + metricGap;
-  const chartAreaW = fullW - metricBoxW - metricGap;
+  // ── Cajas de métricas (columna izquierda) ──────────────────────
+  const boxH = 54;
+  const boxGap = 8;
 
-  const chartCanvasSize = 156;
-  const legendGap = 16;
-  const legendW = chartAreaW - chartCanvasSize - legendGap;
-  const legendX = chartAreaX + chartCanvasSize + legendGap;
-
-  const boxH = 62;
-
-  doc.rect(metricsX, y, metricBoxW, boxH).fill("#edf5ff");
-  doc.rect(metricsX, y, metricBoxW, 15).fill("#17324D");
-  doc.font("Helvetica-Bold").fontSize(7.4).fillColor("#ffffff")
-    .text("REGISTROS CONSIDERADOS", metricsX + 4, y + 4, {
-      width: metricBoxW - 8,
+  doc.rect(leftX, panoramaY, metricsW, boxH).fill("#edf5ff");
+  doc.rect(leftX, panoramaY, metricsW, 14).fill("#17324D");
+  doc.font("Helvetica-Bold").fontSize(6.2).fillColor("#ffffff")
+    .text("REGISTROS CONSIDERADOS", leftX + 4, panoramaY + 4, {
+      width: metricsW - 8,
       align: "center",
     });
-  doc.font("Helvetica-Bold").fontSize(18).fillColor("#17324D")
-    .text(String(totalRows), metricsX + 4, y + 21, {
-      width: metricBoxW - 8,
+  doc.font("Helvetica-Bold").fontSize(20).fillColor("#17324D")
+    .text(String(rows.length), leftX + 4, panoramaY + 17, {
+      width: metricsW - 8,
       align: "center",
     });
-  doc.font("Helvetica").fontSize(7.1).fillColor("#64748b")
-    .text("Total de movimientos / acciones consideradas", metricsX + 8, y + 48, {
-      width: metricBoxW - 16,
-      align: "center",
-    });
-
-  doc.rect(metricsX, y + boxH + 10, metricBoxW, boxH).fill("#e8fffb");
-  doc.rect(metricsX, y + boxH + 10, metricBoxW, 15).fill("#0ea5a0");
-  doc.font("Helvetica-Bold").fontSize(7.4).fillColor("#ffffff")
-    .text("MONTO ACUMULADO", metricsX + 4, y + boxH + 14, {
-      width: metricBoxW - 8,
-      align: "center",
-    });
-  doc.font("Helvetica-Bold").fontSize(18).fillColor("#0ea5a0")
-    .text(fmtCur(totalAmount), metricsX + 4, y + boxH + 31, {
-      width: metricBoxW - 8,
-      align: "center",
-    });
-  doc.font("Helvetica").fontSize(7.1).fillColor("#64748b")
-    .text("Suma económica del bloque actual", metricsX + 8, y + boxH + 58, {
-      width: metricBoxW - 16,
+  doc.font("Helvetica").fontSize(6.2).fillColor("#64748b")
+    .text("Total de registros en este bloque", leftX + 8, panoramaY + 44, {
+      width: metricsW - 16,
       align: "center",
     });
 
-  doc.font("Helvetica-Bold").fontSize(8.3).fillColor("#0f172a")
-    .text(`${title} · distribución`, chartAreaX, y - 2, {
-      width: chartAreaW,
+  const box2Y = panoramaY + boxH + boxGap;
+  const totalAmount = rows.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+  doc.rect(leftX, box2Y, metricsW, boxH).fill("#e8fffb");
+  doc.rect(leftX, box2Y, metricsW, 14).fill(COMPANY.teal);
+  doc.font("Helvetica-Bold").fontSize(6.2).fillColor("#ffffff")
+    .text("MONTO ACUMULADO", leftX + 4, box2Y + 4, {
+      width: metricsW - 8,
+      align: "center",
+    });
+  doc.font("Helvetica-Bold").fontSize(13).fillColor(COMPANY.teal)
+    .text(fmtCur(totalAmount), leftX + 4, box2Y + 18, {
+      width: metricsW - 8,
+      align: "center",
+    });
+  doc.font("Helvetica").fontSize(6.2).fillColor("#64748b")
+    .text("Suma económica del bloque", leftX + 8, box2Y + 44, {
+      width: metricsW - 16,
       align: "center",
     });
 
-  const chartY = y + 6;
+  // ── Gráfica de dona + leyenda (columna central) ────────────────
+  const donutX = leftX + metricsW + gapM;
+  const legendX = donutX + donutSize + legendGap;
+  const legendItemW = donutAreaW - donutSize - legendGap;
   const legendItems = buildEnterpriseLegend(rows);
+
+  doc.font("Helvetica-Bold").fontSize(7.2).fillColor("#0f172a")
+    .text(`${title} · distribución`, donutX, panoramaY - 2, {
+      width: donutAreaW,
+      align: "center",
+    });
 
   if (legendItems.length > 0) {
     const chartBuffer = await renderEnterpriseChart(rows);
-
-    doc.image(chartBuffer, chartAreaX + 6, chartY, {
-      width: chartCanvasSize,
-      height: chartCanvasSize,
+    doc.image(chartBuffer, donutX + 4, panoramaY + 4, {
+      width: donutSize,
+      height: donutSize,
     });
   } else {
     doc.font("Helvetica").fontSize(8).fillColor("#64748b")
-      .text("Sin datos para graficar", chartAreaX, chartY + 70, {
-        width: chartCanvasSize,
+      .text("Sin datos para graficar", donutX, panoramaY + 46, {
+        width: donutSize,
         align: "center",
       });
   }
 
-  let legendY = chartY + 8;
-
+  let legY = panoramaY + 10;
   legendItems.forEach((item) => {
-    doc.rect(legendX, legendY + 2, 8, 8).fill(item.color);
-
-    doc.font("Helvetica").fontSize(8).fillColor("#334155")
-      .text(item.label, legendX + 14, legendY, {
-        width: legendW - 14,
+    doc.rect(legendX, legY + 2, 6, 6).fill(item.color);
+    doc.font("Helvetica").fontSize(6.8).fillColor("#334155")
+      .text(item.label, legendX + 9, legY, {
+        width: legendItemW - 9,
         ellipsis: true,
       });
-
-    legendY += 17;
+    legY += 14;
   });
+
+  // ── KPIs del módulo (columna derecha) ──────────────────────────
+  if (kpiColW > 80 && moduleStats.kpis && moduleStats.kpis.length > 0) {
+    const kpiX = donutX + donutAreaW + kpiGap;
+    let ky = panoramaY;
+
+    moduleStats.kpis.forEach((kpi) => {
+      const kBoxH = 36;
+      doc.rect(kpiX, ky, kpiColW, kBoxH).fill(kpi.bg || "#f8fafc");
+      doc.rect(kpiX, ky, kpiColW, 12).fill(kpi.accent || "#17324D");
+      doc.font("Helvetica-Bold").fontSize(5.4).fillColor("#ffffff")
+        .text(kpi.label.toUpperCase(), kpiX + 3, ky + 3, {
+          width: kpiColW - 6,
+          align: "center",
+        });
+
+doc.font("Helvetica-Bold").fontSize(8.5).fillColor(kpi.accent || "#17324D")
+        .text(String(kpi.value), kpiX + 3, ky + 14, {
+          width: kpiColW - 32,
+          align: "left",
+        });
+
+      if (kpi.delta !== 0) {
+        drawTrendIcon(
+          doc,
+          kpiX + kpiColW - 28,
+          ky + 10,
+          20,
+          kpi.delta > 0 ? "up" : "down"
+        );
+      }
+
+      ky += kBoxH + 4;
+    });
+  }
+
+  const leftColH = boxH + boxGap + boxH; // ~116
+  y = panoramaY + Math.max(leftColH, donutSize + 10) + 10;
+
+  // ── Gráfica de líneas del período ──────────────────────────────
+  if (effectiveTimeline.length > 1) {
+    const lineH = 86;
+
+    doc.rect(leftX, y, fullW, 14).fill("#0f172a");
+    doc.font("Helvetica-Bold").fontSize(6.8).fillColor("#ffffff")
+      .text(
+        moduleStats.chartTitle || "TENDENCIA DEL PERÍODO",
+        leftX + 8,
+        y + 4,
+        { width: fullW - 16 }
+      );
+    y += 14;
+
+    try {
+      const lineBuf = await renderLineChart(
+        effectiveTimeline,
+        moduleStats.lineOptions || {}
+      );
+      if (lineBuf) {
+        doc.image(lineBuf, leftX, y, { width: fullW, height: lineH });
+        y += lineH + 6;
+      }
+    } catch (_e) {
+      doc.font("Helvetica").fontSize(8).fillColor("#64748b")
+        .text(
+          "Sin datos suficientes para mostrar la tendencia.",
+          leftX,
+          y + 30,
+          { width: fullW, align: "center" }
+        );
+      y += lineH + 6;
+    }
+  }
 
   drawEnterpriseFooter(doc, frame);
 }
@@ -908,13 +1380,13 @@ async function generateGeneralReportExcel(report) {
   fill(gc(row, "C"), BGSEP);
   row += 1;
 
-  const actItems = [
-    { label: "Artículos en inventario",   value: Number(report?.inventory?.products_count  || 0), accent: NAVY,  bg: "FFEDF5FF" },
-    { label: "Movimientos de inventario", value: Number(report?.inventory?.movements_count || 0), accent: AMBER, bg: "FFFFF4E5" },
-    { label: "Servicios registrados",     value: Number(report?.operations?.count           || 0), accent: TEAL,  bg: "FFE8FFFB" },
-    { label: "Servicios completados",     value: Number(report?.operations?.completed_count || 0), accent: GREEN, bg: "FFEAFBF0" },
-    { label: "Servicios con incidencia",  value: Number(report?.operations?.incident_count  || 0), accent: RED,   bg: "FFFFECEC" },
-  ];
+const actItems = [
+  { label: "Artículos en inventario",    value: Number(report?.inventory?.products_count || 0), accent: NAVY,  bg: "FFEDF5FF" },
+  { label: "Movimientos de inventario",  value: Number(report?.inventory?.movements_count || 0), accent: AMBER, bg: "FFFFF4E5" },
+  { label: "Servicios registrados",      value: Number(report?.operations?.count || 0), accent: TEAL,  bg: "FFE8FFFB" },
+  { label: "Clientes nuevos",            value: Number(report?.clients?.new_count || 0), accent: NAVY,  bg: "FFEDF5FF" },
+  { label: "Clientes facturados",        value: Number(report?.clients?.invoiced_count || 0), accent: GREEN, bg: "FFEAFBF0" },
+];
 
   const maxActVal = Math.max(...actItems.map((a) => a.value), 1);
 
@@ -1015,90 +1487,219 @@ function addDetailSheet(name, moduleKey, rows) {
     },
   });
 
-  ws.columns = [
-    { header: "Título", key: "title", width: 30 },
-    { header: "Detalle", key: "subtitle", width: 38 },
-    { header: "Fecha / Hora", key: "created_at", width: 24 },
-    { header: "Meta 1", key: "meta1", width: 20 },
-    { header: "Meta 2", key: "meta2", width: 20 },
-    { header: "Monto", key: "amount", width: 18 },
-  ];
+  const colDefs = (() => {
+    switch (moduleKey) {
+      case "inventory_products":
+        return [
+          { header: "Producto", key: "title", width: 32 },
+          { header: "SKU", key: "subtitle", width: 18 },
+          { header: "Stock Actual", key: "stock", width: 14 },
+          { header: "Stock Mínimo", key: "stock_min", width: 14 },
+          { header: "Bajo Mínimo", key: "low_stock", width: 14 },
+          { header: "Unidad", key: "unit", width: 12 },
+          { header: "Fecha de Alta", key: "created_at", width: 24 },
+        ];
+      case "inventory_movements":
+        return [
+          { header: "Tipo", key: "type", width: 14 },
+          { header: "Motivo", key: "subtitle", width: 28 },
+          { header: "Cantidad Total", key: "amount", width: 14 },
+          { header: "Núm. Productos", key: "products", width: 16 },
+          { header: "Actor", key: "actor", width: 24 },
+          { header: "Detalle", key: "detail", width: 48 },
+          { header: "Fecha / Hora", key: "created_at", width: 24 },
+        ];
+      case "invoices":
+        return [
+          { header: "Folio", key: "title", width: 14 },
+          { header: "Cliente", key: "subtitle", width: 28 },
+          { header: "Ubicación", key: "location", width: 24 },
+          { header: "Período", key: "period", width: 18 },
+          { header: "Conceptos", key: "concepts", width: 48 },
+          { header: "Estado", key: "status", width: 14 },
+          { header: "Actor", key: "actor", width: 24 },
+          { header: "Monto", key: "amount", width: 16 },
+          { header: "Fecha / Hora", key: "created_at", width: 24 },
+        ];
+      case "quotes":
+        return [
+          { header: "Folio", key: "title", width: 14 },
+          { header: "Título", key: "subtitle", width: 28 },
+          { header: "Conceptos", key: "concepts", width: 48 },
+          { header: "Estado", key: "status", width: 14 },
+          { header: "Actor", key: "actor", width: 24 },
+          { header: "Monto", key: "amount", width: 16 },
+          { header: "Fecha / Hora", key: "created_at", width: 24 },
+        ];
+      case "clients":
+        return [
+          { header: "Cliente", key: "title", width: 28 },
+          { header: "Empresa", key: "company", width: 24 },
+          { header: "RFC", key: "rfc", width: 16 },
+          { header: "Email", key: "email", width: 28 },
+          { header: "Teléfono", key: "phone", width: 16 },
+          { header: "Facturas Emitidas", key: "invoices_count", width: 18 },
+          { header: "Folios de Facturas", key: "folios", width: 30 },
+          { header: "Productos / Servicios Adquiridos", key: "products", width: 48 },
+          { header: "Total Gastado", key: "amount", width: 16 },
+          { header: "Alta", key: "created_at", width: 24 },
+        ];
+      case "operations":
+        return [
+          { header: "Operación", key: "title", width: 32 },
+          { header: "Cliente", key: "subtitle", width: 26 },
+          { header: "Estado", key: "status", width: 16 },
+          { header: "Actor", key: "actor", width: 24 },
+          { header: "Fecha / Hora", key: "created_at", width: 24 },
+        ];
+      default:
+        return [
+          { header: "Título", key: "title", width: 30 },
+          { header: "Detalle", key: "subtitle", width: 38 },
+          { header: "Fecha / Hora", key: "created_at", width: 24 },
+          { header: "Meta 1", key: "meta1", width: 20 },
+          { header: "Meta 2", key: "meta2", width: 20 },
+          { header: "Monto", key: "amount", width: 18 },
+        ];
+    }
+  })();
+
+  ws.columns = colDefs;
 
   ws.getRow(1).height = 18;
   ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
-  ws.getRow(1).fill = {
-    type: "pattern",
-    pattern: "solid",
-    fgColor: { argb: "FF17324D" },
-  };
+  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF17324D" } };
+  ws.getRow(1).alignment = { horizontal: "center", vertical: "middle" };
 
   if (!Array.isArray(rows) || rows.length === 0) {
-    ws.mergeCells("A2:F2");
+    const lastCol = String.fromCharCode(64 + colDefs.length);
+    ws.mergeCells(`A2:${lastCol}2`);
     ws.getCell("A2").value = "Sin registros en el período";
     ws.getCell("A2").font = { bold: true, size: 11, color: { argb: "FF64748B" } };
-    ws.getCell("A2").alignment = {
-      horizontal: "center",
-      vertical: "middle",
-    };
+    ws.getCell("A2").alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(2).height = 28;
-    ws.getCell("A2").fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFF8FAFC" },
-    };
-    ws.getCell("A2").border = {
-      bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
-    };
-    ws.getColumn("amount").numFmt = '"$"#,##0.00';
+    ws.getCell("A2").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } };
     return;
   }
 
+  const gm = (row, label) => {
+    const m = (row.meta || []).find((m) => m.label === label);
+    return m != null ? String(m.value ?? "") : "";
+  };
+
   rows.forEach((r) => {
-    const meta = Array.isArray(r.meta) ? r.meta : [];
-    ws.addRow({
-      title: r.title || "",
-      subtitle: r.subtitle || "",
-      created_at: r.created_at
-        ? new Date(r.created_at).toLocaleString("es-MX")
-        : "",
-      meta1: meta[0] ? `${meta[0].label}: ${meta[0].value}` : "",
-      meta2: meta[1] ? `${meta[1].label}: ${meta[1].value}` : "",
-      amount: Number(r.amount || 0),
-    });
+    let rowData = {};
+    switch (moduleKey) {
+      case "inventory_products":
+        rowData = {
+          title: r.title || "",
+          subtitle: r.subtitle || "",
+          stock: Number(r.amount || 0),
+          stock_min: Number(gm(r, "Stock mínimo") || 0),
+          low_stock: gm(r, "Stock bajo") === "Sí" ? "⚠ Bajo mínimo" : "✓ OK",
+          unit: gm(r, "Unidad"),
+          created_at: r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "",
+        };
+        break;
+      case "inventory_movements":
+        rowData = {
+          type: gm(r, "Tipo"),
+          subtitle: r.subtitle || "",
+          amount: Number(r.amount || 0),
+          products: gm(r, "Productos"),
+          actor: gm(r, "Actor"),
+          detail: gm(r, "Detalle"),
+          created_at: r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "",
+        };
+        break;
+      case "invoices":
+        rowData = {
+          title: r.title || "",
+          subtitle: r.subtitle || "",
+          location: gm(r, "Ubicación"),
+          period: gm(r, "Periodo"),
+          concepts: gm(r, "Conceptos"),
+          status: gm(r, "Estado"),
+          actor: gm(r, "Actor"),
+          amount: Number(r.amount || 0),
+          created_at: r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "",
+        };
+        break;
+      case "quotes":
+        rowData = {
+          title: r.title || "",
+          subtitle: r.subtitle || "",
+          concepts: gm(r, "Conceptos"),
+          status: gm(r, "Estado"),
+          actor: gm(r, "Actor"),
+          amount: Number(r.amount || 0),
+          created_at: r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "",
+        };
+        break;
+      case "clients":
+        rowData = {
+          title: r.title || "",
+          company: gm(r, "Empresa"),
+          rfc: gm(r, "RFC"),
+          email: gm(r, "Email"),
+          phone: gm(r, "Teléfono"),
+          invoices_count: gm(r, "Facturas"),
+          folios: gm(r, "Folios"),
+          products: gm(r, "Productos / servicios"),
+          amount: Number(gm(r, "Total gastado") || r.amount || 0),
+          created_at: r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "",
+        };
+        break;
+      case "operations":
+        rowData = {
+          title: r.title || "",
+          subtitle: r.subtitle || "",
+          status: gm(r, "Estado"),
+          actor: gm(r, "Actor"),
+          created_at: r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "",
+        };
+        break;
+      default: {
+        const meta = Array.isArray(r.meta) ? r.meta : [];
+        rowData = {
+          title: r.title || "",
+          subtitle: r.subtitle || "",
+          created_at: r.created_at ? new Date(r.created_at).toLocaleString("es-MX") : "",
+          meta1: meta[0] ? `${meta[0].label}: ${meta[0].value}` : "",
+          meta2: meta[1] ? `${meta[1].label}: ${meta[1].value}` : "",
+          amount: Number(r.amount || 0),
+        };
+      }
+    }
+    ws.addRow(rowData);
   });
 
   ws.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
-
     row.height = 18;
     row.eachCell((cell) => {
-      cell.border = {
-        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
-      };
-      cell.alignment = {
-        vertical: "middle",
-        wrapText: true,
-      };
+      cell.border = { bottom: { style: "thin", color: { argb: "FFE2E8F0" } } };
+      cell.alignment = { vertical: "middle", wrapText: false };
       cell.font = { size: 9, color: { argb: "FF0F172A" } };
     });
-
     if (rowNumber % 2 === 0) {
       row.eachCell((cell) => {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FFF8FAFC" },
-        };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } };
       });
     }
   });
 
-  ws.getColumn("amount").numFmt = '"$"#,##0.00';
+  const amountIdx = colDefs.findIndex((c) => c.key === "amount");
+  if (amountIdx >= 0) ws.getColumn(amountIdx + 1).numFmt = '"$"#,##0.00';
+  const stockIdx = colDefs.findIndex((c) => c.key === "stock");
+  if (stockIdx >= 0) ws.getColumn(stockIdx + 1).numFmt = "#,##0";
 }
-addDetailSheet("Inventario Productos", "inventory", report.inventory.products_rows || []);
-addDetailSheet("Inventario Movimientos", "inventory", report.inventory.movements_rows || []);
+
+addDetailSheet("Inventario Productos", "inventory_products", report.inventory.products_rows || []);
+addDetailSheet("Inventario Movimientos", "inventory_movements", report.inventory.movements_rows || []);
 addDetailSheet("Cotizaciones", "quotes", report.quotes.recent_rows || []);
 addDetailSheet("Facturación", "invoices", report.invoices.recent_rows || []);
+addDetailSheet("Clientes", "clients", report.clients.recent_rows || []);
 addDetailSheet("Operaciones", "operations", report.operations.recent_rows || []);
 
 return Buffer.from(await wb.xlsx.writeBuffer());
@@ -1409,7 +2010,7 @@ y += 6;
         { label: "Artículos en inventario",   value: Number(report?.inventory?.products_count  || 0), color: navy },
         { label: "Movimientos de inventario", value: Number(report?.inventory?.movements_count || 0), color: "#d97706" },
         { label: "Servicios registrados",     value: Number(report?.operations?.count           || 0), color: teal },
-        { label: "Servicios completados",     value: Number(report?.operations?.completed_count || 0), color: "#16a34a" },
+        { label: "Clientes registrados",     value: Number(report?.clients?.count || 0), color: "#0F4C81" },
         { label: "Servicios con incidencia",  value: Number(report?.operations?.incident_count  || 0), color: "#dc2626" },
       ];
 
@@ -1491,10 +2092,11 @@ if ((report.inventory.products_rows || []).length > 0) {
   await drawModuleDetailPage(
     doc,
     report,
-    "inventory",
+    "inventory_products",
     "INVENTARIO",
     report.inventory.products_rows || [],
-    1
+    1,
+    report.inventory.stock_timeline || []
   );
 }
 
@@ -1502,10 +2104,11 @@ if ((report.inventory.movements_rows || []).length > 0) {
   await drawModuleDetailPage(
     doc,
     report,
-    "inventory",
+    "inventory_movements",
     "INVENTARIO",
     report.inventory.movements_rows || [],
-    2
+    2,
+    report.inventory.movement_timeline || []
   );
 }
 
@@ -1516,7 +2119,8 @@ if ((report.quotes.recent_rows || []).length > 0) {
     "quotes",
     "COTIZACIONES",
     report.quotes.recent_rows || [],
-    1
+    1,
+    report.quotes.trend || []
   );
 }
 
@@ -1527,7 +2131,20 @@ if ((report.invoices.recent_rows || []).length > 0) {
     "invoices",
     "FACTURACIÓN",
     report.invoices.recent_rows || [],
-    1
+    1,
+    report.invoices.trend || []
+  );
+}
+
+if ((report.clients.recent_rows || []).length > 0) {
+  await drawModuleDetailPage(
+    doc,
+    report,
+    "clients",
+    "CLIENTES",
+    report.clients.recent_rows || [],
+    1,
+    report.invoices.trend || []
   );
 }
 
@@ -1538,10 +2155,10 @@ if ((report.operations.recent_rows || []).length > 0) {
     "operations",
     "OPERACIONES",
     report.operations.recent_rows || [],
-    1
+    1,
+    []
   );
 }
-
 // ─── PAGINACIÓN TOTAL ─────────────────────────────
 const range = doc.bufferedPageRange();
 for (let i = range.start; i < range.start + range.count; i += 1) {
@@ -1589,7 +2206,7 @@ function generateGeneralReportXML(report) {
     <ProductosActivos>${Number(report?.inventory?.products_count || 0)}</ProductosActivos>
     <Movimientos>${Number(report?.inventory?.movements_count || 0)}</Movimientos>
     <Operaciones>${Number(report?.operations?.count || 0)}</Operaciones>
-    <Completadas>${Number(report?.operations?.completed_count || 0)}</Completadas>
+    <Clientes>${Number(report?.clients?.count || 0)}</Clientes>
     <Incidencias>${Number(report?.operations?.incident_count || 0)}</Incidencias>
   </KpisClave>`;
 
@@ -1625,50 +2242,98 @@ function generateGeneralReportXML(report) {
     MontoTotal="${Number(report?.invoices?.total_amount || 0).toFixed(2)}"
   />
 
-  <Operaciones
-    Cantidad="${Number(report?.operations?.count || 0)}"
-    Completadas="${Number(report?.operations?.completed_count || 0)}"
-    Incidencias="${Number(report?.operations?.incident_count || 0)}"
-  />
+<Operaciones
+  Cantidad="${Number(report?.operations?.count || 0)}"
+  Incidencias="${Number(report?.operations?.incident_count || 0)}"
+/>
+
+<Clientes
+  Cantidad="${Number(report?.clients?.count || 0)}"
+/>
 
   <Indicadores>
-  <Detalle>
-  ${(report.inventory.products_rows || []).map(r => `
+<Detalle>
+  ${(report.inventory.products_rows || []).map(r => {
+    const gm = (label) => escXml(String((r.meta || []).find(m => m.label === label)?.value ?? ""));
+    return `
     <InventarioProducto
-      titulo="${escXml(r.title)}"
-      detalle="${escXml(r.subtitle)}"
-      fecha="${escXml(r.created_at || "")}" />
-  `).join("")}
+      nombre="${escXml(r.title)}"
+      sku="${escXml(r.subtitle)}"
+      stockActual="${Number(r.amount || 0)}"
+      stockMinimo="${gm("Stock mínimo")}"
+      bajominimo="${gm("Stock bajo")}"
+      unidad="${gm("Unidad")}"
+      fecha="${escXml(r.created_at || "")}" />`;
+  }).join("")}
 
-  ${(report.inventory.movements_rows || []).map(r => `
+  ${(report.inventory.movements_rows || []).map(r => {
+    const gm = (label) => escXml(String((r.meta || []).find(m => m.label === label)?.value ?? ""));
+    return `
     <InventarioMovimiento
       titulo="${escXml(r.title)}"
-      detalle="${escXml(r.subtitle)}"
-      fecha="${escXml(r.created_at || "")}"
-      actor="${escXml((r.meta || []).find(m => m.label === "Actor")?.value || "")}" />
-  `).join("")}
+      motivo="${escXml(r.subtitle)}"
+      tipo="${gm("Tipo")}"
+      cantidad="${gm("Cantidad")}"
+      numProductos="${gm("Productos")}"
+      actor="${gm("Actor")}"
+      detalle="${gm("Detalle")}"
+      fecha="${escXml(r.created_at || "")}" />`;
+  }).join("")}
 
-  ${(report.quotes.recent_rows || []).map(r => `
+  ${(report.quotes.recent_rows || []).map(r => {
+    const gm = (label) => escXml(String((r.meta || []).find(m => m.label === label)?.value ?? ""));
+    return `
     <Cotizacion
-      titulo="${escXml(r.title)}"
-      estado="${escXml((r.meta || []).find(m => m.label === "Estado")?.value || "")}"
-      fecha="${escXml(r.created_at || "")}" />
-  `).join("")}
+      folio="${escXml(r.title)}"
+      titulo="${escXml(r.subtitle)}"
+      estado="${gm("Estado")}"
+      actor="${gm("Actor")}"
+      conceptos="${gm("Conceptos")}"
+      monto="${Number(r.amount || 0).toFixed(2)}"
+      fecha="${escXml(r.created_at || "")}" />`;
+  }).join("")}
 
-  ${(report.invoices.recent_rows || []).map(r => `
+  ${(report.invoices.recent_rows || []).map(r => {
+    const gm = (label) => escXml(String((r.meta || []).find(m => m.label === label)?.value ?? ""));
+    return `
     <Factura
-      titulo="${escXml(r.title)}"
-      estado="${escXml((r.meta || []).find(m => m.label === "Estado")?.value || "")}"
-      fecha="${escXml(r.created_at || "")}" />
-  `).join("")}
+      folio="${escXml(r.title)}"
+      cliente="${escXml(r.subtitle)}"
+      estado="${gm("Estado")}"
+      actor="${gm("Actor")}"
+      ubicacion="${gm("Ubicación")}"
+      periodo="${gm("Periodo")}"
+      conceptos="${gm("Conceptos")}"
+      monto="${Number(r.amount || 0).toFixed(2)}"
+      fecha="${escXml(r.created_at || "")}" />`;
+  }).join("")}
 
-  ${(report.operations.recent_rows || []).map(r => `
+  ${(report.clients.recent_rows || []).map(r => {
+    const gm = (label) => escXml(String((r.meta || []).find(m => m.label === label)?.value ?? ""));
+    return `
+    <Cliente
+      nombre="${escXml(r.title)}"
+      empresa="${gm("Empresa")}"
+      rfc="${gm("RFC")}"
+      email="${gm("Email")}"
+      telefono="${gm("Teléfono")}"
+      facturasEmitidas="${gm("Facturas")}"
+      foliosFacturas="${gm("Folios")}"
+      productosAdquiridos="${gm("Productos / servicios")}"
+      totalGastado="${gm("Total gastado")}"
+      fecha="${escXml(r.created_at || "")}" />`;
+  }).join("")}
+
+  ${(report.operations.recent_rows || []).map(r => {
+    const gm = (label) => escXml(String((r.meta || []).find(m => m.label === label)?.value ?? ""));
+    return `
     <Operacion
       titulo="${escXml(r.title)}"
-      detalle="${escXml(r.subtitle)}"
-      estado="${escXml((r.meta || []).find(m => m.label === "Estado")?.value || "")}"
-      fecha="${escXml(r.created_at || "")}" />
-  `).join("")}
+      cliente="${escXml(r.subtitle)}"
+      estado="${gm("Estado")}"
+      actor="${gm("Actor")}"
+      fecha="${escXml(r.created_at || "")}" />`;
+  }).join("")}
 </Detalle>
 ${concepts}
   </Indicadores>

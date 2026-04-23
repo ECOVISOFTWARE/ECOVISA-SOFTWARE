@@ -592,19 +592,23 @@ export default function WeeklyReportsModule({ currentWorker }) {
 
     return () => es.close();
   }, [buildQuery]);
-  const kpis = useMemo(() => {
-    return {
-      quotes: summary?.quotes?.count || 0,
-      invoices: summary?.invoices?.count || 0,
-      sales: Number(summary?.quotes?.total_amount || 0),
-      billed: Number(summary?.invoices?.total_amount || 0),
-      products: summary?.inventory?.products_count || 0,
-      movements: summary?.inventory?.movements_count || 0,
-      operations: summary?.operations?.count || 0,
-      completedOperations: summary?.operations?.completed_count || 0,
-      incidentOperations: summary?.operations?.incident_count || 0,
-    };
-  }, [summary]);
+const kpis = useMemo(() => {
+  return {
+    quotes: summary?.quotes?.count || 0,
+    invoices: summary?.invoices?.count || 0,
+    sales: Number(summary?.quotes?.total_amount || 0),
+    billed: Number(summary?.invoices?.total_amount || 0),
+    products: summary?.inventory?.products_count || 0,
+    movements: summary?.inventory?.movements_count || 0,
+    operations: summary?.operations?.count || 0,
+    incidentOperations: summary?.operations?.incident_count || 0,
+
+    clientsNew: summary?.clients?.new_count || 0,
+    clientsQuoted: summary?.clients?.quoted_count || 0,
+    clientsInvoiced: summary?.clients?.invoiced_count || 0,
+    clientConversion: Number(summary?.clients?.conversion_rate || 0),
+  };
+}, [summary]);
 
 const summaryRows = useMemo(() => ([
     {
@@ -644,17 +648,26 @@ const summaryRows = useMemo(() => ([
       history: summary?.invoices?.recent_rows || [],
     },
     {
+      rowKey: "clients-new",
+      module: "CLIENTES",
+      indicator: "Clientes nuevos en el período",
+      value: kpis.clientsNew,
+      detail: `Con cotización: ${kpis.clientsQuoted} · Facturados: ${kpis.clientsInvoiced} · Conversión: ${kpis.clientConversion}%`,
+      icon: <TbUsers />,
+      history: summary?.clients?.recent_rows || [],
+    },
+    {
       rowKey: "operations-total",
       module: "OPERACIONES",
       indicator: "Total operaciones",
       value: kpis.operations,
-      detail: `Completadas: ${kpis.completedOperations} · Incidencias: ${kpis.incidentOperations}`,
+      detail: `Incidencias: ${kpis.incidentOperations}`,
       icon: <TbTruck />,
       history: summary?.operations?.recent_rows || [],
     },
   ]), [kpis, summary]);
 
-  const chartSlides = useMemo(() => ([
+const chartSlides = useMemo(() => ([
     {
       key: "inventory",
       title: "Inventario",
@@ -667,13 +680,12 @@ const summaryRows = useMemo(() => ([
       key: "operations",
       title: "Operaciones",
       subtitle: "Estado operativo",
-      labels: ["Totales", "Operaciones Completadas", "Incidencias"],
+      labels: ["Totales", "Incidencias"],
       values: [
         Number(kpis.operations || 0),
-        Number(kpis.completedOperations || 0),
         Number(kpis.incidentOperations || 0),
       ],
-      colors: ["#4f46e5", "#22c55e", "#f59e0b"],
+      colors: ["#4f46e5", "#f59e0b"],
     },
     {
       key: "quotes",
@@ -690,6 +702,19 @@ const summaryRows = useMemo(() => ([
       labels: ["Cantidad", "Monto"],
       values: [Number(kpis.invoices || 0), Number(kpis.billed || 0)],
       colors: ["#0891b2", "#06b6d4"],
+    },
+    {
+      key: "clients",
+      title: "Clientes",
+      subtitle: "Altas, pipeline y conversión",
+      labels: ["Nuevos", "Con cotización", "Facturados", "Conversión %"],
+      values: [
+        Number(kpis.clientsNew || 0),
+        Number(kpis.clientsQuoted || 0),
+        Number(kpis.clientsInvoiced || 0),
+        Number(kpis.clientConversion || 0),
+      ],
+      colors: ["#2563eb", "#7c3aed", "#16a34a", "#0ea5a0"],
     },
   ]), [kpis]);
 
@@ -866,103 +891,130 @@ const summaryRows = useMemo(() => ([
           </div>
         </div>
 
-        <div className="wrKpiPanel">
-          <div className="wrMiniCardHead wrMiniCardHead--kpi">
-            <div className="wrMiniCardEyebrow">Resumen</div>
-            <h3>Información del período</h3>
-            <p>Lectura compacta y directa.</p>
-          </div>
-
-          <div className="wrKpiGrid wrKpiGrid--tight">
-            <div className="wrKpiCardCompact wrKpiCardCompact--blue">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbFileText /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Cotizaciones</div>
-                  <div className="wrKpiCardCompact__sub">Registros</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{kpis.quotes}</div>
-            </div>
-
-            <div className="wrKpiCardCompact wrKpiCardCompact--emerald">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbReceipt /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Facturas</div>
-                  <div className="wrKpiCardCompact__sub">Emitidas</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{kpis.invoices}</div>
-            </div>
-
-            <div className="wrKpiCardCompact wrKpiCardCompact--violet">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbCurrencyDollar /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Cotizado</div>
-                  <div className="wrKpiCardCompact__sub">Monto</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{formatCurrency(kpis.sales)}</div>
-            </div>
-
-            <div className="wrKpiCardCompact wrKpiCardCompact--cyan">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbCurrencyDollar /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Facturado</div>
-                  <div className="wrKpiCardCompact__sub">Monto</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{formatCurrency(kpis.billed)}</div>
-            </div>
-
-            <div className="wrKpiCardCompact wrKpiCardCompact--amber">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbPackage /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Productos</div>
-                  <div className="wrKpiCardCompact__sub">Inventario</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{kpis.products}</div>
-            </div>
-
-            <div className="wrKpiCardCompact wrKpiCardCompact--slate">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbPackage /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Movimientos</div>
-                  <div className="wrKpiCardCompact__sub">Período</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{kpis.movements}</div>
-            </div>
-
-            <div className="wrKpiCardCompact wrKpiCardCompact--indigo">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbTruck /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Operaciones</div>
-                  <div className="wrKpiCardCompact__sub">Totales</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{kpis.operations}</div>
-            </div>
-
-            <div className="wrKpiCardCompact wrKpiCardCompact--green">
-              <div className="wrKpiCardCompact__head">
-                <div className="wrKpiCardCompact__icon"><TbTarget /></div>
-                <div>
-                  <div className="wrKpiCardCompact__title">Operaciones Completadas</div>
-                  <div className="wrKpiCardCompact__sub">Sin incidencia</div>
-                </div>
-              </div>
-              <div className="wrKpiCardCompact__value">{kpis.completedOperations}</div>
-            </div>
-          </div>
+<div className="wrKpiPanel wrKpiPanel--compact">
+  <div className="wrKpiGrid wrKpiGrid--tight">
+    <div className="wrKpiCardCompact wrKpiCardCompact--blue">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbFileText /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Cotizaciones</div>
+          <div className="wrKpiCardCompact__sub">Registros</div>
         </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.quotes}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--emerald">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbReceipt /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Facturas</div>
+          <div className="wrKpiCardCompact__sub">Emitidas</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.invoices}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--violet">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbCurrencyDollar /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Cotizado</div>
+          <div className="wrKpiCardCompact__sub">Monto</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{formatCurrency(kpis.sales)}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--cyan">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbCurrencyDollar /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Facturado</div>
+          <div className="wrKpiCardCompact__sub">Monto</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{formatCurrency(kpis.billed)}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--amber">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbPackage /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Productos</div>
+          <div className="wrKpiCardCompact__sub">Inventario</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.products}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--slate">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbPackage /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Movimientos</div>
+          <div className="wrKpiCardCompact__sub">Período</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.movements}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--indigo">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbTruck /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Operaciones</div>
+          <div className="wrKpiCardCompact__sub">Totales</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.operations}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--blue">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbUsers /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Clientes nuevos</div>
+          <div className="wrKpiCardCompact__sub">Período</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.clientsNew}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--violet">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbUserSearch /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Clientes con cotización</div>
+          <div className="wrKpiCardCompact__sub">Pipeline</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.clientsQuoted}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--green">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbBuilding /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Clientes facturados</div>
+          <div className="wrKpiCardCompact__sub">Venta consolidada</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.clientsInvoiced}</div>
+    </div>
+
+    <div className="wrKpiCardCompact wrKpiCardCompact--cyan">
+      <div className="wrKpiCardCompact__head">
+        <div className="wrKpiCardCompact__icon"><TbTarget /></div>
+        <div className="wrKpiCardCompact__meta">
+          <div className="wrKpiCardCompact__title">Conversión cliente → venta</div>
+          <div className="wrKpiCardCompact__sub">Eficiencia comercial</div>
+        </div>
+      </div>
+      <div className="wrKpiCardCompact__value">{kpis.clientConversion}%</div>
+    </div>
+  </div>
+</div>
       </div>
 
       <div className="wrSectionCard wrSectionCard--unified">

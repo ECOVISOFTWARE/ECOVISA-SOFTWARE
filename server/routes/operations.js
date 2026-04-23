@@ -85,11 +85,11 @@ router.post("/", branchFilter, async (req, res) => {
           .neq("id", req.actorWorker.id);
 
         if (peers && peers.length > 0) {
-          await createNotifications(peers.map((p) => ({
+            await createNotifications(peers.map((p) => ({
             recipient_id: p.id,
             actor_id: req.actorWorker.id,
-            actor_name: req.actorWorker.name,
-            actor_photo: req.actorWorker.photo,
+            actor_name: req.actorWorker.full_name || req.actorWorker.username || "Sistema",
+            actor_photo: req.actorWorker.profile_photo_url || null,
             type: "operation_created",
             title: "Nueva operación registrada",
             message: `${req.actorWorker.name} creó la operación "${data.title}"`,
