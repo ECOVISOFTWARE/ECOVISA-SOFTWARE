@@ -1422,3 +1422,152 @@
     border-radius:14px;
   }
 }
+/* ═══════════════════════════════════════════════════════════
+   Servicios Sanitarios & Operaciones — secciones nuevas
+   ══════════════════════════════════════════════════════════= */
+
+/* Header de sección con botón de acción */
+.wrSvcHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+/* Texto informativo */
+.wrInfoText {
+  font-size: 12px;
+  color: var(--wr-text-muted, #64748b);
+  margin: 0;
+  line-height: 1.5;
+  flex: 1;
+}
+
+/* Tabla extra-ancha con scroll horizontal */
+.wrDynTableXWide {
+  overflow-x: auto;
+}
+.wrSvcTable {
+  min-width: 1400px;
+}
+
+/* Cabecera de columnas de día */
+.wrThDay {
+  min-width: 32px !important;
+  text-align: center !important;
+  padding: 6px 4px !important;
+}
+
+/* Celda de día */
+.wrDayCell {
+  text-align: center;
+  padding: 4px !important;
+}
+
+/* Botón circular de día para tabla de servicios */
+.wrDayCheckSm {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid #cbd5e1;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+  font-family: inherit;
+}
+.wrDayCheckSm:hover:not(:disabled) {
+  border-color: #4361ee;
+  color: #4361ee;
+}
+.wrDayCheckSm--on {
+  background: #00c9a7;
+  border-color: #00c9a7;
+  color: #0f172a;
+}
+.wrDayCheckSm:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* Pill de día en tabla de operaciones */
+.wrDayBadge {
+  display: inline-block;
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Status badge (solo lectura) */
+.wrStatusBadge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.wrStatusBadge--pendiente  { background: rgba(148,163,184,0.12); color: #94a3b8; }
+.wrStatusBadge--completado { background: rgba(22,163,74,0.12);   color: #16a34a; }
+.wrStatusBadge--incidencia { background: rgba(220,38,38,0.12);   color: #dc2626; }
+
+/* Select de status con color según valor */
+.wrStatusSelect { min-width: 100px; }
+.wrStatusSelect--pendiente  { border-color: #475569 !important; color: #94a3b8 !important; }
+.wrStatusSelect--completado { border-color: #16a34a !important; color: #16a34a !important; }
+.wrStatusSelect--incidencia { border-color: #dc2626 !important; color: #dc2626 !important; }
+
+/* Billing badge en tabla operaciones */
+.wrBillBadge {
+  background: rgba(245,158,11,0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Tag de ciudad */
+.wrCityTag {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #1e293b;
+  color: #7fa4ff;
+  border: 1px solid #334155;
+  white-space: nowrap;
+}
+.wrCityTag--guasave { color: #86efac; border-color: #166534; }
+
+/* Filas coloreadas */
+.wrRowRetired  td { opacity: 0.45; }
+.wrRowToBill   td { background: rgba(245,158,11,0.05) !important; }
+.wrRowCompleted td { background: rgba(22,163,74,0.05)  !important; }
+.wrRowIncident  td { background: rgba(220,38,38,0.06)  !important; }
+
+/* Variantes de celda */
+.wrTdBold     { font-weight: 600; }
+.wrTdCenter   { text-align: center !important; }
+.wrTdLocation { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Inputs extra-small y medium */
+.wrInputXs { width: 64px !important; min-width: 56px !important; }
+.wrInputMd { width: 150px !important; min-width: 120px !important; }

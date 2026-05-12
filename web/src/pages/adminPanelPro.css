@@ -1,5 +1,5 @@
   /* =========================
-    ADMIN PANEL PRO (refinado)
+    ADMIN PANEL
     - Menos blanco
     - Dept cards con color
     - Kebab menu (3 puntitos)
@@ -10,12 +10,11 @@
   ========================= */
 
   .apWrap{
-    /* ✅ centro real del layout */
+    
     width: 100%;
     max-width: 1180px;
     margin: 0 auto;
 
-    /* ✅ “safe padding” simétrico (móvil + notch) */
     padding-top: 18px;
     padding-bottom: 24px;
     padding-left: max(14px, env(safe-area-inset-left));
@@ -23,14 +22,14 @@
 
     color: rgba(10,12,14,0.92);
 
-    /* ✅ evita scroll lateral fantasma */
+    
     overflow-x: hidden;
   }
-  /* ✅ evita que inputs/grids empujen el ancho hacia un lado */
+  
   .apWrap, .apWrap *{
     box-sizing: border-box;
   }
-  /* cards estilo “mail UI” */
+  
   .apCard{
     background: rgba(255,255,255,0.78);
     border: 1px solid rgba(0,0,0,0.10);
@@ -207,7 +206,7 @@
     padding: 6px 0 10px;
   }
 
-  /* Dept card (color full) */
+  /* Dept card  */
   .apDeptCard{
     flex: 1;
     min-height: 44px;
@@ -274,7 +273,7 @@
     gap: 8px;
     box-shadow: 0 18px 60px rgba(0,0,0,0.45);
     z-index: 100000;
-    transform: translate(-100%, 0); /* ancla: esquina derecha del botón */
+    transform: translate(-100%, 0); 
   }
 
   .apMiniMenuPortal.fromTop{ transform-origin: top right; }
@@ -329,7 +328,7 @@
     color: rgba(10,12,14,0.90);
   }
 
-  /* ✅ Selects custom (no default look) */
+  
   .apSelect{
     height: 40px;
     border-radius: 12px;
@@ -374,7 +373,7 @@
     border-collapse: separate;
     border-spacing: 0;
     table-layout: auto;
-    min-width: 980px; /* evita que se aplaste en pantallas medianas */
+    min-width: 980px; 
   }
   .apTable thead th{
     background: rgba(10,12,14,0.06);
@@ -392,7 +391,7 @@
     box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--rowTint) 8%, transparent);
   }
 
-  /* ✅ Texto SIEMPRE negro: no forzamos color en td */
+  
   .apRowTinted td{
     color: rgba(10,12,14,0.86);
   }
@@ -490,7 +489,7 @@
     opacity: 0.75;
   }
 
-  /* Dept cell (en tabla) sin contenedor de icono */
+  /* Dept cell */
   .apDeptCell{
     display: inline-flex;
     align-items: center;
@@ -551,11 +550,11 @@
   .apModalBody{
     padding: 14px;
     overflow-y: auto;
-    overflow-x: hidden; /* ✅ mata el scroll lateral */
+    overflow-x: hidden; 
     flex: 1;
   }
 
-  /* ✅ MUY IMPORTANTE: evita que los hijos del grid empujen el ancho */
+ 
   .apModalGrid,
   .apField,
   .apSpan2{
@@ -569,19 +568,19 @@
     box-sizing: border-box;
   }
 
-  /* ✅ por si algún grid interno empuja */
+ 
   .apColorGridPro,
   .apIconGridPro{
     max-width: 100%;
   }
 
-  /* Acciones que nunca se enciman */
+  
   .apModalActions{
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     padding-top: 8px;
-    flex-wrap: wrap; /* ✅ evita encimar */
+    flex-wrap: wrap; 
   }
 
   .apAnimIn{ animation: apIn 170ms ease both; }
@@ -653,7 +652,7 @@
   }
 
   /* =========================
-    ICON PICKER (sin tiles blancos)
+    ICON PICKER
   ========================= */
   .apIconGridPro{
     display: grid;
@@ -772,7 +771,7 @@
     color: rgba(122,217,87,0.95);
   }
 
-  /* ✅ Permisos: ejecutivo, legible en modal claro */
+  
   .apPermGridPro{
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -832,7 +831,7 @@
     color: rgba(10,12,14,0.70);
   }
 
-  /* ✅ Botones centrados */
+  
   .apPermActionsCenter{
     display:flex;
     gap: 10px;
@@ -940,14 +939,14 @@
   .apMiniCell{
     display:flex;
     align-items:center;
-    justify-content:center; /* ✅ centra contenido */
+    justify-content:center; 
     gap: 10px;
   }
 
   .apMiniStrong{
     font-weight: 1000;
     width: 100%;
-    justify-content:center; /* ✅ centra “Puesto” */
+    justify-content:center; 
     text-align:center;
   }
 
@@ -1083,7 +1082,7 @@
     width: 22px;
     height: 22px;
     color: rgba(10,12,14,0.45);
-    z-index: 0;              /* ✅ atrás */
+    z-index: 0;              
   }
 
   .apAvatar img{
@@ -1093,7 +1092,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    z-index: 1;              /* ✅ encima del icono */
+    z-index: 1;             
   }
   .apUserName{
     font-weight: 1000;
@@ -1180,39 +1179,39 @@
     overflow: hidden;
   }
 
-  /* ✅ Dentro del card, el contenido debe poder scrollear (no cortarse) */
+  
   .apDeptGrid{
     flex: 1;
-    overflow: auto;          /* 🔥 antes hidden: se cortaba */
+    overflow: auto;          
     align-content: start;
-    padding-right: 4px;      /* pequeño margen para scrollbar */
+    padding-right: 4px;      
   }
 
   .apMiniTable{
     flex: 1;
-    overflow: auto;          /* 🔥 antes hidden: se cortaba */
+    overflow: auto;          
     align-content: start;
     padding-right: 4px;
   }
 
-  /* ✅ En móvil: cards dejan de ser “fijos” y se adaptan al contenido */
+  
   @media (max-width: 760px){
     .apCardFixed{
-      height: auto;          /* 🔥 ya no 440 */
-      overflow: visible;     /* deja respirar */
+      height: auto;          
+      overflow: visible;     
     }
     .apDeptGrid,
     .apMiniTable{
-      overflow: visible;     /* en cel mejor flujo natural */
+      overflow: visible;     
       padding-right: 0;
     }
   }
   /* =========================
-    ✅ Mobile centering: Dept + Puestos igual de centrados que "Usuarios internos"
+  Mobile centering: Dept + Puestos igual de centrados que "Usuarios internos"
   ========================= */
   @media (max-width: 760px){
 
-    /* Cards ocupan todo el ancho disponible */
+    
     .apGrid2 > .apCard{
       width: 100%;
     }
@@ -1220,16 +1219,16 @@
     /* ===== Departamentos (tiles centrados) ===== */
     .apDeptGrid{
       display: grid;
-      justify-items: center;        /* ✅ centra cada tile */
-      justify-content: center;      /* ✅ centra el grid */
-      grid-template-columns: repeat(2, minmax(0, 1fr)); /* 2 cols bonitas en móvil */
+      justify-items: center;        
+      justify-content: center;      
+      grid-template-columns: repeat(2, minmax(0, 1fr)); 
       gap: 12px;
       padding-right: 0;
     }
 
     .apDeptTile{
       width: 100%;
-      max-width: 180px;            /* ✅ evita tiles gigantes y los centra */
+      max-width: 180px;            
     }
 
     /* ===== Puestos (mini table centrada y sin “empujar” el card) ===== */
@@ -1241,7 +1240,7 @@
     .apMiniHead,
     .apMiniRow{
       width: 100%;
-      max-width: 560px;            /* ✅ se ve centrado como “Usuarios internos” */
+      max-width: 560px;            
       margin-left: auto;
       margin-right: auto;
     }
@@ -1270,7 +1269,7 @@
   /* Teléfonos muy chicos: 1 columna para departamentos */
   @media (max-width: 420px){
     .apDeptGrid{
-      grid-template-columns: 1fr;  /* ✅ 1 col centrada */
+      grid-template-columns: 1fr;  
     }
     .apDeptTile{
       max-width: 260px;
@@ -1310,18 +1309,18 @@
     font-size: 12px;
   }
 
-  /* el área de contenido llena el card sin crecer (✅ scroll interno real) */
+  /* el área de contenido llena el card sin crecer  */
   .apDeptGrid{
     flex: 1;
-    overflow: auto;          /* ✅ antes hidden (rompía el layout en móvil) */
+    overflow: auto;          
     overflow-x: hidden;
     align-content: start;
-    padding-right: 4px;      /* espacio para scrollbar */
+    padding-right: 4px;      
   }
 
   .apMiniTable{
     flex: 1;
-    overflow: auto;          /* ✅ antes hidden */
+    overflow: auto;          
     overflow-x: hidden;
     align-content: start;
     padding-right: 4px;
@@ -1372,7 +1371,7 @@
   .apUsersTopRow{
     align-items: center;
     gap: 12px;
-    flex-wrap: wrap;            /* ✅ permite bajar filtros en móvil */
+    flex-wrap: wrap;           
   }
 
   .apUsersSearchMid{
@@ -1381,17 +1380,17 @@
     justify-content: center;
     align-items: center;
     padding: 0 10px;
-    min-width: 0;               /* ✅ evita empujar ancho */
+    min-width: 0;               
   }
 
   .apUsersSearch{
     width: min(520px, 46vw);
-    min-width: 0;               /* ✅ evita overflow */
+    min-width: 0;               
   }
 
   .apUsersSearchInput{
     width: 100%;
-    min-width: 0;               /* ✅ evita overflow */
+    min-width: 0;               
   }
 
   .apUsersFiltersRight{
@@ -1399,10 +1398,10 @@
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-    min-width: 0;               /* ✅ evita empujar ancho */
+    min-width: 0;               
   }
 
-  /* ✅ IMPORTANTÍSIMO: que los selects NO fuercen ancho */
+  
   .apUsersFiltersRight select{
     min-width: 0;
     max-width: 100%;
@@ -1421,12 +1420,12 @@
       gap: 10px;
     }
 
-    /* ✅ Título arriba */
+    /* Título arriba */
     .apHeader > div:first-child{
       width: 100%;
     }
 
-    /* ✅ Botonera como fila (tipo dashboard) */
+    /* Botonera como fila (tipo dashboard) */
     .apHeaderRight{
       order: 2;
       width: 100%;
@@ -1435,20 +1434,20 @@
       gap: 10px;
     }
 
-    /* ✅ Botón “Usuario” ocupa todo lo posible */
+    
     .apHeaderRight .apBtnPrimary{
       flex: 1;
       justify-content: center;
     }
 
-    /* ✅ Botón refresh “tap friendly” */
+    /* Botón refresh “tap friendly” */
     .apHeaderRight .apBtnIconOnly{
       width: 46px;
       height: 46px;
       border-radius: 14px;
     }
 
-    /* ✅ Buscador FULL-WIDTH abajo (como dashboard) */
+    /* Buscador FULL-WIDTH abajo  */
     .apHeaderMid{
       order: 3;
       width: 100%;
@@ -1466,7 +1465,7 @@
     }
   }
 
-  /* ✅ Extra: en teléfonos chicos, evita que todo se apriete */
+  
   @media (max-width: 420px){
     .apBtn{
       height: 44px;
@@ -1475,7 +1474,7 @@
     .apTitle{ font-size: 20px; }
     .apSub{ font-size: 12px; }
   }
-  /* ✅ Usuarios: layout PRO en móvil (buscador 100% + filtros 2 columnas) */
+
   @media (max-width: 760px){
 
     .apUsersTopRow{
@@ -1500,22 +1499,22 @@
       gap: 8px;
     }
 
-    /* 2 selects = 2 columnas (no se salen, no se cortan) */
+   
     .apUsersFiltersRight > *{
       flex: 1;
       min-width: 0;
     }
 
-    /* por si ProSelect renderiza un select adentro */
+    
     .apUsersFiltersRight select{
       width: 100%;
     }
   }
-  /* ✅ Tabla -> Cards PRO en móvil (compactas, no gigantes) */
+  
   @media (max-width: 760px) {
     .apTableWrap {
       overflow-x: hidden;
-      background: transparent;     /* ✅ menos “caja blanca dentro de caja” */
+      background: transparent;     
       border: 0;
       box-shadow: none;
     }
@@ -1549,7 +1548,7 @@
       border: 0;
       padding: 8px 12px;
       display: grid;
-      grid-template-columns: 1fr 1fr; /* ✅ balanceado */
+      grid-template-columns: 1fr 1fr; 
       gap: 10px;
       align-items: center;
       min-width: 0;
@@ -1563,8 +1562,7 @@
       white-space: nowrap;
     }
 
-    /* ✅ Trabajador como “header” del card */
-  /* 🔥 Header de la card móvil */
+
   .apTdStrong{
     display: flex !important;
     flex-direction: column;
@@ -1576,7 +1574,7 @@
     text-align: center;
   }
 
-  /* 👇 Ahora mostramos la palabra TRABAJADOR debajo de la foto */
+  
   .apTdStrong::before{
     content: "Trabajador";
     font-weight: 1000;
@@ -1610,15 +1608,15 @@
     line-height: 1.2;
     margin-top: 2px;
   }
-    /* ✅ Oculta lo que lo hace gigante (si quieres luego lo hacemos toggle) */
+    
     .apTable tbody td[data-label="Usuario"],
     .apTable tbody td[data-label="Contraseña"]{
       display: none !important;
     }
 
-    /* ✅ Acciones: HORIZONTALES en 1 renglón */
+
     .apTable tbody td.apActions{
-      /* 🔥 antes era grid por herencia, por eso se apilaban */
+
       display: flex !important;
       flex-direction: row !important;
       align-items: center;
@@ -1626,7 +1624,7 @@
 
       gap: 10px;
 
-      /* ✅ sin label */
+      
       padding-top: 10px;
       padding-bottom: 14px;
     }
@@ -1635,13 +1633,13 @@
       content: none !important;
     }
 
-    /* ✅ por si existe alguna regla vieja */
+    
     .apActions{
       display: flex !important;
       flex-direction: row !important;
       justify-content: center !important;
       gap: 10px !important;
-      flex-wrap: nowrap !important;  /* 1 sola línea */
+      flex-wrap: nowrap !important;  
     }
       .apIconBtn{
       width: 40px;
@@ -1653,26 +1651,26 @@
       padding-top: 10px;
       padding-bottom: 6px;
     }
-      /* ✅ En móvil: SOLO “Trabajador” (avatar+nombre) + “Acciones” */
+     
     .apTable tbody td[data-label="Departamento"],
     .apTable tbody td[data-label="Puesto"],
     .apTable tbody td[data-label="Activo"]{
       display: none !important;
     }
 
-    /* ✅ Card no pegada a bordes */
+   
     .apTable tbody tr{
       margin-left: 6px;
       margin-right: 6px;
     }
 
-    /* ✅ Header (avatar+nombre) más limpio */
+    
     .apTdStrong{
       padding-top: 12px;
       padding-bottom: 8px;
     }
 
-    /* ✅ Acciones: una sola fila compacta debajo del nombre */
+    
     .apTable tbody td.apActions{
       padding-top: 8px;
       padding-bottom: 14px;
@@ -1682,11 +1680,11 @@
       display: flex;
       justify-content: center;
       gap: 10px;
-      flex-wrap: nowrap; /* ✅ 1 sola fila */
+      flex-wrap: nowrap; 
     }
 
     .apIconBtn{
-      width: 44px;   /* ✅ más “tap-friendly” */
+      width: 44px;   
       height: 44px;
       border-radius: 14px;
     }

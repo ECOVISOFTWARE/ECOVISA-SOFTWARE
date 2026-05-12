@@ -39,6 +39,106 @@ const EMPTY_GOAL_ROW       = (concept = "") => ({ concept, objective: 0, real: 0
 const DEFAULT_GOALS        = ["Sanitarios", "Fosas", "Traila", "Lavamanos"].map(EMPTY_GOAL_ROW);
 const EMPTY_SNAPSHOT       = () => ({ obra_service: 0, evento_service: 0, obra_patios: 0, evento_patios: 0, total_units: 0, observations: "" });
 
+// ─── Servicios Sanitarios ─────────────────────────────────────────────────────
+// Formato = CONTROL DE SERVICIOS SANITARIOS
+const EMPTY_SERVICE_ENTRY = () => ({
+  client_code     : "",        // # Cliente (M25, M195…)
+  client_name     : "",        // Nombre del cliente
+  city            : "LOS MOCHIS", // CIUDAD
+  unit_folio      : "",        // Salida de almacén
+  price           : 0,         // Precio renta
+  location        : "",        // Ubicación / Lote
+  delivery_date   : "",        // Fecha de Salida
+  baños           : 1,         // Sanitarios propios
+  lavamanos       : 0,
+  remolque        : 0,
+  service_freq    : 3,         // servicios/semana
+  billing_periods : 1,         // Periodo
+  billing_days    : 28,        // días = periods * 28
+  billing_start   : "",        // Inicio factura
+  billing_end     : "",        // Final factura
+  billing_status  : "------",  // Alerta: Facturar | ------
+  invoice_number  : "",        // No. Factura
+  service_lun     : false,
+  service_mar     : false,
+  service_mie     : false,
+  service_jue     : false,
+  service_vie     : false,
+  service_sab     : false,
+  unit_status     : "Activo",  // Activo | RETIRADO
+  notes           : "",
+});
+
+// Formato = RUTA 2026 (una fila por ubicación por día programado)
+const EMPTY_OPERATION_ENTRY = () => ({
+  client_code    : "",
+  client_name    : "",
+  city           : "",
+  unit_folio     : "",
+  baños          : 0,
+  lavamanos      : 0,
+  remolque       : 0,
+  location       : "",
+  day            : "LUN",        // LUN | MAR | MIÉ | JUE | VIE | SÁB
+  billing_status : "------",
+  invoice_number : "",
+  status         : "pendiente",  // pendiente | completado | incidencia
+  worker_name    : "",
+  notes          : "",
+});
+
+// Auto-genera operaciones desde los servicios (preserva ediciones manuales al combinar)
+function generateOperationsFromServices(services) {
+  const DAYS = [
+    { key: "service_lun", label: "LUN" },
+    { key: "service_mar", label: "MAR" },
+    { key: "service_mie", label: "MIÉ" },
+    { key: "service_jue", label: "JUE" },
+    { key: "service_vie", label: "VIE" },
+    { key: "service_sab", label: "SÁB" },
+  ];
+  const ops = [];
+  (services || []).forEach((svc) => {
+    if (svc.unit_status === "RETIRADO") return;
+    DAYS.forEach(({ key, label }) => {
+      if (svc[key]) {
+        ops.push({
+          client_code    : svc.client_code,
+          client_name    : svc.client_name,
+          city           : svc.city,
+          unit_folio     : svc.unit_folio,
+          baños          : Number(svc.baños     || 0),
+          lavamanos      : Number(svc.lavamanos  || 0),
+          remolque       : Number(svc.remolque   || 0),
+          location       : svc.location,
+          day            : label,
+          billing_status : svc.billing_status,
+          invoice_number : svc.invoice_number,
+          status         : "pendiente",
+          worker_name    : "",
+          notes          : "",
+        });
+      }
+    });
+  });
+  return ops;
+}
+
+// Combina ops nuevas con existentes preservando status/worker/notes donde coincidan
+function mergeOps(newOps, existingOps) {
+  return newOps.map((op) => {
+    const ex = (existingOps || []).find(
+      (o) =>
+        o.client_code === op.client_code &&
+        o.location    === op.location    &&
+        o.day         === op.day
+    );
+    return ex
+      ? { ...op, status: ex.status, worker_name: ex.worker_name, notes: ex.notes }
+      : op;
+  });
+}
+
 // ─── Form state ───────────────────────────────────────────────
 function emptyWeeklyReport(worker) {
   return {
@@ -47,7 +147,10 @@ function emptyWeeklyReport(worker) {
     total_sales: 0, total_collected: 0,
     collection_entries: [],
     weekly_goals: DEFAULT_GOALS.map((g) => ({ ...g })),
-    prospecting_entries: [], portfolio_issues: [], vehicle_entries: [],
+    prospecting_entries: [], portfolio_issues: [],
+    services_entries  : [],   // ← NUEVO: Control de Servicios Sanitarios
+    operations_entries: [],   // ← NUEVO: Ruta operativa semanal
+    vehicle_entries: [],
     extra_expenses: [], unit_reports: [],
     inventory_snapshot: EMPTY_SNAPSHOT(),
     summary: "", notes: "", report_observations: "", team_observations: "",
@@ -65,14 +168,16 @@ function hydrateRow(row, worker) {
     sales_2026: Number(row.sales_2026 || 0),
     weekly_billing: Number(row.weekly_billing || 0),
     sales_without_invoice: Number(row.sales_without_invoice || 0),
-    collection_entries:   Array.isArray(row.collection_entries)   ? row.collection_entries   : [],
-    weekly_goals:         Array.isArray(row.weekly_goals) && row.weekly_goals.length > 0 ? row.weekly_goals : DEFAULT_GOALS.map((g) => ({ ...g })),
-    prospecting_entries:  Array.isArray(row.prospecting_entries)  ? row.prospecting_entries  : [],
-    portfolio_issues:     Array.isArray(row.portfolio_issues)     ? row.portfolio_issues      : [],
-    vehicle_entries:      Array.isArray(row.vehicle_entries)      ? row.vehicle_entries       : [],
-    extra_expenses:       Array.isArray(row.extra_expenses)       ? row.extra_expenses        : [],
-    unit_reports:         Array.isArray(row.unit_reports)         ? row.unit_reports          : [],
-    inventory_snapshot:   row.inventory_snapshot && typeof row.inventory_snapshot === "object" ? row.inventory_snapshot : EMPTY_SNAPSHOT(),
+    collection_entries  : Array.isArray(row.collection_entries)   ? row.collection_entries   : [],
+    weekly_goals        : Array.isArray(row.weekly_goals) && row.weekly_goals.length > 0 ? row.weekly_goals : DEFAULT_GOALS.map((g) => ({ ...g })),
+    prospecting_entries : Array.isArray(row.prospecting_entries)  ? row.prospecting_entries  : [],
+    portfolio_issues    : Array.isArray(row.portfolio_issues)     ? row.portfolio_issues      : [],
+    services_entries    : Array.isArray(row.services_entries)     ? row.services_entries      : [],   // ← NUEVO
+    operations_entries  : Array.isArray(row.operations_entries)   ? row.operations_entries    : [],   // ← NUEVO
+    vehicle_entries     : Array.isArray(row.vehicle_entries)      ? row.vehicle_entries       : [],
+    extra_expenses      : Array.isArray(row.extra_expenses)       ? row.extra_expenses        : [],
+    unit_reports        : Array.isArray(row.unit_reports)         ? row.unit_reports          : [],
+    inventory_snapshot  : row.inventory_snapshot && typeof row.inventory_snapshot === "object" ? row.inventory_snapshot : EMPTY_SNAPSHOT(),
   };
 }
 
@@ -113,17 +218,62 @@ function WeeklyReportModal({ open, mode, form, setForm, onClose, onSave }) {
       return { ...p, [field]: arr };
     });
   }
-  function updSnap(key, val) {
+function updSnap(key, val) {
     setForm((p) => ({ ...p, inventory_snapshot: { ...(p.inventory_snapshot || EMPTY_SNAPSHOT()), [key]: val } }));
   }
 
+  // ── Handlers especiales para Servicios (requieren re-generar operaciones) ──
+  function handleSvcDayToggle(idx, dayKey, val) {
+    setForm((p) => {
+      const newSvcs = [...(p.services_entries || [])];
+      newSvcs[idx] = { ...newSvcs[idx], [dayKey]: val };
+      return {
+        ...p,
+        services_entries  : newSvcs,
+        operations_entries: mergeOps(
+          generateOperationsFromServices(newSvcs),
+          p.operations_entries
+        ),
+      };
+    });
+  }
+
+  function handleDelSvc(idx) {
+    setForm((p) => {
+      const newSvcs = [...(p.services_entries || [])];
+      newSvcs.splice(idx, 1);
+      return {
+        ...p,
+        services_entries  : newSvcs,
+        operations_entries: generateOperationsFromServices(newSvcs),
+      };
+    });
+  }
+
+  function handleRegenOps() {
+    setForm((p) => ({
+      ...p,
+      operations_entries: mergeOps(
+        generateOperationsFromServices(p.services_entries || []),
+        p.operations_entries
+      ),
+    }));
+  }
+
   const snap = form.inventory_snapshot || EMPTY_SNAPSHOT();
-  const totalCobranza    = (form.collection_entries || []).reduce((s, r) => s + Number(r.amount || 0), 0);
-  const totalGastos      = (form.extra_expenses     || []).reduce((s, r) => s + Number(r.amount || 0), 0);
-  const totalCombustible = (form.vehicle_entries    || []).reduce((s, r) => s + Number(r.fuel_amount || 0), 0);
-  const totalMtto        = (form.vehicle_entries    || []).reduce((s, r) => s + Number(r.maintenance_amount || 0), 0);
-  const totalInv         = Number(snap.obra_service || 0) + Number(snap.evento_service || 0) + Number(snap.obra_patios || 0) + Number(snap.evento_patios || 0);
-  const pctAlcance       = Number(form.budget_2026) > 0 ? ((Number(form.sales_2026 || 0) / Number(form.budget_2026)) * 100).toFixed(1) : null;
+const totalCobranza       = (form.collection_entries  || []).reduce((s, r) => s + Number(r.amount            || 0), 0);
+  const totalGastos         = (form.extra_expenses      || []).reduce((s, r) => s + Number(r.amount            || 0), 0);
+  const totalCombustible    = (form.vehicle_entries     || []).reduce((s, r) => s + Number(r.fuel_amount        || 0), 0);
+  const totalMtto           = (form.vehicle_entries     || []).reduce((s, r) => s + Number(r.maintenance_amount || 0), 0);
+  const totalInv            = Number(snap.obra_service  || 0) + Number(snap.evento_service || 0) + Number(snap.obra_patios || 0) + Number(snap.evento_patios || 0);
+  const pctAlcance          = Number(form.budget_2026) > 0 ? ((Number(form.sales_2026 || 0) / Number(form.budget_2026)) * 100).toFixed(1) : null;
+  // ── Servicios & Operaciones ─────────────────────────────────────────────
+  const totalBaños          = (form.services_entries   || []).reduce((s, r) => s + Number(r.baños     || 0), 0);
+  const totalLavamanos      = (form.services_entries   || []).reduce((s, r) => s + Number(r.lavamanos  || 0), 0);
+  const totalRemolques      = (form.services_entries   || []).reduce((s, r) => s + Number(r.remolque   || 0), 0);
+  const totalSvcsFacturar   = (form.services_entries   || []).filter(s => s.billing_status === "Facturar").length;
+  const totalOpsCompletadas = (form.operations_entries || []).filter(o => o.status === "completado").length;
+  const totalOpsIncidencias = (form.operations_entries || []).filter(o => o.status === "incidencia").length;
 
   const inp = (label, key, type = "text", placeholder = "") => (
     <div className="wrField">
@@ -271,7 +421,7 @@ function WeeklyReportModal({ open, mode, form, setForm, onClose, onSave }) {
             </div>
           </Section>
 
-          {/* 6. CARTERA / POSTVENTA */}
+{/* 6. CARTERA / POSTVENTA */}
           <Section title="Cartera / Reporte Postventa" icon={<TbAlertTriangle />} defaultOpen={false}>
             <div className="wrDynTable">
               <table>
@@ -296,6 +446,373 @@ function WeeklyReportModal({ open, mode, form, setForm, onClose, onSave }) {
               {!ro && <button type="button" className="wrBtn wrBtnGhost wrBtnSm" onClick={() => addRow("portfolio_issues", EMPTY_PORTFOLIO_ROW)}><TbPlus /> Agregar cliente en cartera</button>}
               {(form.portfolio_issues || []).length > 0 && (
                 <div className="wrTableTotal">Total cartera: <strong>{formatCurrency((form.portfolio_issues || []).reduce((s, r) => s + Number(r.amount || 0), 0))}</strong></div>
+              )}
+            </div>
+          </Section>
+
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          {/* 7. SERVICIOS SANITARIOS — Control de Servicios (formato Excel)    */}
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          <Section
+            title={`Servicios Sanitarios${totalBaños > 0 ? ` — ${totalBaños} baños · ${totalLavamanos} lav. · ${totalRemolques} rem.` : ""}`}
+            icon={<TbPackage />}
+            defaultOpen={false}
+          >
+            <div className="wrSvcHeader">
+              <p className="wrInfoText">
+                Registra los servicios activos de la semana. Al marcar los días (L/M/X/J/V/S) se genera automáticamente el plan de Operaciones.
+              </p>
+              {!ro && (
+                <button type="button" className="wrBtn wrBtnGhost wrBtnSm" onClick={handleRegenOps}>
+                  ⟳ Regenerar Operaciones
+                </button>
+              )}
+            </div>
+
+            <div className="wrDynTable wrDynTableXWide">
+              <table className="wrSvcTable">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Cód.</th>
+                    <th>Cliente</th>
+                    <th>Ciudad</th>
+                    <th>Folio</th>
+                    <th>Precio $</th>
+                    <th>Ubicación</th>
+                    <th>F. Salida</th>
+                    <th title="Baños">🚽</th>
+                    <th title="Lavamanos">🚿</th>
+                    <th title="Remolque">🚐</th>
+                    <th title="Frecuencia/sem">Frec.</th>
+                    <th title="Período">Per.</th>
+                    <th title="Días totales">Días</th>
+                    <th>Ini.Fact.</th>
+                    <th>Fin.Fact.</th>
+                    <th>Alerta</th>
+                    <th>Factura</th>
+                    <th className="wrThDay">L</th>
+                    <th className="wrThDay">M</th>
+                    <th className="wrThDay">X</th>
+                    <th className="wrThDay">J</th>
+                    <th className="wrThDay">V</th>
+                    <th className="wrThDay">S</th>
+                    <th>Status</th>
+                    {!ro && <th style={{ width: 36 }} />}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(form.services_entries || []).map((svc, i) => (
+                    <tr
+                      key={i}
+                      className={
+                        svc.unit_status === "RETIRADO" ? "wrRowRetired"
+                        : svc.billing_status === "Facturar" ? "wrRowToBill"
+                        : ""
+                      }
+                    >
+                      <td className="wrTdMuted wrTdCenter">{i + 1}</td>
+                      <td>
+                        <input className="wrInput wrInputXs" value={svc.client_code} readOnly={ro}
+                          placeholder="M25"
+                          onChange={(e) => updRow("services_entries", i, "client_code", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputMd" value={svc.client_name} readOnly={ro}
+                          placeholder="Nombre del cliente"
+                          onChange={(e) => updRow("services_entries", i, "client_name", e.target.value)} />
+                      </td>
+                      <td>
+                        <select className="wrInput wrInputXs" value={svc.city} disabled={ro}
+                          onChange={(e) => updRow("services_entries", i, "city", e.target.value)}>
+                          <option>LOS MOCHIS</option>
+                          <option>GUASAVE</option>
+                          <option>MOCORITO</option>
+                          <option>ESTACION BAMOA</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" value={svc.unit_folio} readOnly={ro}
+                          placeholder="685"
+                          onChange={(e) => updRow("services_entries", i, "unit_folio", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="number" step="0.01" value={svc.price} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "price", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputMd" value={svc.location} readOnly={ro}
+                          placeholder="CAÑAVERAL"
+                          onChange={(e) => updRow("services_entries", i, "location", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="date" value={svc.delivery_date || ""} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "delivery_date", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="number" min="0" value={svc.baños} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "baños", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="number" min="0" value={svc.lavamanos} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "lavamanos", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="number" min="0" value={svc.remolque} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "remolque", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="number" min="1" max="7" value={svc.service_freq} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "service_freq", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="number" min="1" value={svc.billing_periods} readOnly={ro}
+                          onChange={(e) => {
+                            const p = Number(e.target.value) || 1;
+                            updRow("services_entries", i, "billing_periods", p);
+                            updRow("services_entries", i, "billing_days", p * 28);
+                          }} />
+                      </td>
+                      <td className="wrTdMuted wrTdCenter">{Number(svc.billing_periods || 1) * 28}</td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="date" value={svc.billing_start || ""} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "billing_start", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" type="date" value={svc.billing_end || ""} readOnly={ro}
+                          onChange={(e) => updRow("services_entries", i, "billing_end", e.target.value)} />
+                      </td>
+                      <td>
+                        <select className="wrInput wrInputXs" value={svc.billing_status} disabled={ro}
+                          onChange={(e) => updRow("services_entries", i, "billing_status", e.target.value)}>
+                          <option value="------">------</option>
+                          <option value="Facturar">Facturar</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputXs" value={svc.invoice_number} readOnly={ro}
+                          placeholder="M576"
+                          onChange={(e) => updRow("services_entries", i, "invoice_number", e.target.value)} />
+                      </td>
+                      {[
+                        { key: "service_lun", label: "L" },
+                        { key: "service_mar", label: "M" },
+                        { key: "service_mie", label: "X" },
+                        { key: "service_jue", label: "J" },
+                        { key: "service_vie", label: "V" },
+                        { key: "service_sab", label: "S" },
+                      ].map(({ key }) => (
+                        <td key={key} className="wrDayCell">
+                          <button
+                            type="button"
+                            className={`wrDayCheckSm ${svc[key] ? "wrDayCheckSm--on" : ""}`}
+                            onClick={() => !ro && handleSvcDayToggle(i, key, !svc[key])}
+                            disabled={ro}
+                          >
+                            {svc[key] ? "✓" : "·"}
+                          </button>
+                        </td>
+                      ))}
+                      <td>
+                        <select className="wrInput wrInputXs" value={svc.unit_status} disabled={ro}
+                          onChange={(e) => updRow("services_entries", i, "unit_status", e.target.value)}>
+                          <option value="Activo">Activo</option>
+                          <option value="RETIRADO">RETIRADO</option>
+                        </select>
+                      </td>
+                      {!ro && (
+                        <td>
+                          <button type="button" className="wrIconBtn wrIconBtnDanger" onClick={() => handleDelSvc(i)}>
+                            <TbTrash />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  {(form.services_entries || []).length === 0 && (
+                    <tr>
+                      <td colSpan={ro ? 25 : 26} className="wrDynEmpty">
+                        {ro ? "Sin servicios registrados." : "Agrega los servicios activos de la semana."}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {!ro && (
+                <button type="button" className="wrBtn wrBtnGhost wrBtnSm"
+                  onClick={() => addRow("services_entries", EMPTY_SERVICE_ENTRY)}>
+                  <TbPlus /> Agregar servicio
+                </button>
+              )}
+
+              {totalBaños > 0 && (
+                <div className="wrTableTotalsRow">
+                  <span>🚽 Baños: <strong>{totalBaños}</strong></span>
+                  <span>🚿 Lavamanos: <strong>{totalLavamanos}</strong></span>
+                  <span>🚐 Remolques: <strong>{totalRemolques}</strong></span>
+                  <span>💲 A facturar: <strong style={{ color: "#f59e0b" }}>{totalSvcsFacturar}</strong></span>
+                  <span>
+                    Facturación estimada:&nbsp;
+                    <strong>
+                      {formatCurrency(
+                        (form.services_entries || [])
+                          .filter(s => s.unit_status === "Activo")
+                          .reduce((sum, s) => sum + Number(s.price || 0), 0)
+                      )}
+                    </strong>
+                  </span>
+                </div>
+              )}
+            </div>
+          </Section>
+
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          {/* 8. OPERACIONES DE LA SEMANA — Ruta operativa (formato RUTA 2026)  */}
+          {/* ══════════════════════════════════════════════════════════════════ */}
+          <Section
+            title={`Operaciones de la Semana${(form.operations_entries || []).length > 0
+              ? ` — ${(form.operations_entries || []).length} operaciones · ${totalOpsCompletadas} completadas · ${totalOpsIncidencias} incidencias`
+              : ""
+            }`}
+            icon={<TbTruck />}
+            defaultOpen={false}
+          >
+            {!ro && (
+              <p className="wrInfoText">
+                Generadas automáticamente desde los días marcados en Servicios. Actualiza el status al concluir la semana.
+              </p>
+            )}
+
+            <div className="wrDynTable wrDynTableWide">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Ciudad</th>
+                    <th>Ubicación</th>
+                    <th>Folio</th>
+                    <th title="Baños">🚽</th>
+                    <th title="Lavamanos">🚿</th>
+                    <th title="Remolque">🚐</th>
+                    <th>Día</th>
+                    <th>Alerta</th>
+                    <th>Factura</th>
+                    <th>Status</th>
+                    <th>Trabajador</th>
+                    <th>Observaciones</th>
+                    {!ro && <th style={{ width: 36 }} />}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(form.operations_entries || []).map((op, i) => (
+                    <tr
+                      key={i}
+                      className={
+                        op.status === "completado" ? "wrRowCompleted"
+                        : op.status === "incidencia" ? "wrRowIncident"
+                        : ""
+                      }
+                    >
+                      <td className="wrTdBold">{op.client_name || "—"}</td>
+                      <td>
+                        <span className={`wrCityTag wrCityTag--${(op.city || "").toLowerCase().replace(/ /g, "")}`}>
+                          {op.city || "—"}
+                        </span>
+                      </td>
+                      <td className="wrTdLocation" title={op.location}>{op.location || "—"}</td>
+                      <td className="wrTdMuted">{op.unit_folio || "—"}</td>
+                      <td className="wrTdCenter">{op.baños    || 0}</td>
+                      <td className="wrTdCenter">{op.lavamanos || 0}</td>
+                      <td className="wrTdCenter">{op.remolque  || 0}</td>
+                      <td>
+                        <span className="wrDayBadge">{op.day}</span>
+                      </td>
+                      <td>
+                        {op.billing_status === "Facturar"
+                          ? <span className="wrBillBadge">Facturar</span>
+                          : <span className="wrTdMuted">——</span>
+                        }
+                      </td>
+                      <td className="wrTdMuted">{op.invoice_number || "—"}</td>
+                      <td>
+                        {ro ? (
+                          <span className={`wrStatusBadge wrStatusBadge--${op.status}`}>{op.status}</span>
+                        ) : (
+                          <select
+                            className={`wrInput wrInputXs wrStatusSelect wrStatusSelect--${op.status}`}
+                            value={op.status}
+                            onChange={(e) => updRow("operations_entries", i, "status", e.target.value)}
+                          >
+                            <option value="pendiente">Pendiente</option>
+                            <option value="completado">Completado</option>
+                            <option value="incidencia">Incidencia</option>
+                          </select>
+                        )}
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputSm" value={op.worker_name} readOnly={ro}
+                          placeholder="Responsable"
+                          onChange={(e) => updRow("operations_entries", i, "worker_name", e.target.value)} />
+                      </td>
+                      <td>
+                        <input className="wrInput wrInputSm" value={op.notes} readOnly={ro}
+                          placeholder="Observación…"
+                          onChange={(e) => updRow("operations_entries", i, "notes", e.target.value)} />
+                      </td>
+                      {!ro && (
+                        <td>
+                          <button type="button" className="wrIconBtn wrIconBtnDanger"
+                            onClick={() => delRow("operations_entries", i)}>
+                            <TbTrash />
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                  {(form.operations_entries || []).length === 0 && (
+                    <tr>
+                      <td colSpan={ro ? 13 : 14} className="wrDynEmpty">
+                        {ro
+                          ? "Sin operaciones registradas."
+                          : "Activa días de servicio en la sección Servicios para generar operaciones automáticamente."
+                        }
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {!ro && (
+                <button type="button" className="wrBtn wrBtnGhost wrBtnSm"
+                  onClick={() => addRow("operations_entries", EMPTY_OPERATION_ENTRY)}>
+                  <TbPlus /> Agregar operación manual
+                </button>
+              )}
+
+              {(form.operations_entries || []).length > 0 && (
+                <div className="wrTableTotalsRow">
+                  <span>Total: <strong>{(form.operations_entries || []).length}</strong></span>
+                  <span>✅ Completadas: <strong style={{ color: "#16a34a" }}>{totalOpsCompletadas}</strong></span>
+                  <span>⚠️ Incidencias: <strong style={{ color: "#dc2626" }}>{totalOpsIncidencias}</strong></span>
+                  <span>
+                    Tasa de éxito:&nbsp;
+                    <strong>
+                      {(form.operations_entries || []).length > 0
+                        ? Math.round((totalOpsCompletadas / (form.operations_entries || []).length) * 100) + "%"
+                        : "—"
+                      }
+                    </strong>
+                  </span>
+                  <span>
+                    🚽 Baños servidos:&nbsp;
+                    <strong>
+                      {(form.operations_entries || [])
+                        .filter(o => o.status === "completado")
+                        .reduce((s, o) => s + Number(o.baños || 0), 0)}
+                    </strong>
+                  </span>
+                </div>
               )}
             </div>
           </Section>

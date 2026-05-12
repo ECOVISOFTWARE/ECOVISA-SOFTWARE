@@ -35,7 +35,7 @@
   console.log("🔌 inventoryRoutes loaded from:", require.resolve("./routes/inventory"));
 
   /* =========================
-    Headers debug (SIEMPRE arriba)
+    Headers debug
   ========================= */
   app.use((req, res, next) => {
     res.setHeader("X-Server-File", __filename);
@@ -48,7 +48,7 @@
   ========================= */
   const isProd = process.env.NODE_ENV === "production";
 
-  // ✅ En producción: si front y back viven en el MISMO dominio, NO necesitas CORS
+  
   if (!isProd) {
     const ALLOWED_ORIGINS = [
       "http://localhost:3000",
@@ -77,7 +77,7 @@
     });
   }
 
-  // ✅ si CORS bloquea, responde en JSON (debug real)
+  // si CORS bloquea, responde en JSON (debug real)
   app.use((err, req, res, next) => {
     if (err && String(err.message || "").startsWith("CORS blocked:")) {
       return res.status(403).json({ error: err.message, origin: req.headers.origin || "" });
@@ -107,9 +107,7 @@
   app.use("/api/forms", formsRoutes);
 
   /* =========================
-    ✅ DEBUG DIRECTO (BYPASS ROUTER)
-    - si esto responde, tu server y montaje están bien
-    - si tu frontend daba 404, el problema está en routes/inventory.js
+    DEBUG DIRECTO (BYPASS ROUTER)
   ========================= */
   app.get("/api/inventory/metrics-ping", (req, res) => {
     return res.json({ ok: true, from: "SERVER_DIRECT" });
@@ -119,14 +117,14 @@
   app.use(
     "/api/inventory",
     (req, res, next) => {
-      console.log("✅ HIT /api/inventory ->", req.method, req.url);
-      console.log("✅ inventory router file mounted from:", require.resolve("./routes/inventory"));
+      console.log("HIT /api/inventory ->", req.method, req.url);
+      console.log("inventory router file mounted from:", require.resolve("./routes/inventory"));
       next();
     },
     inventoryRoutes
   );
 
-  // ✅ DEBUG DIRECTO PARA COMPARAR CONTRA EL ROUTER
+  // DEBUG DIRECTO PARA COMPARAR CONTRA EL ROUTER
   app.get("/api/inventory/performance-summary-direct", async (req, res) => {
     return res.json({
       ok: true,
@@ -142,8 +140,8 @@ app.use("/api/quotes", quotesRoutes);
 app.use(
   "/api/clients",
   (req, res, next) => {
-    console.log("✅ HIT /api/clients ->", req.method, req.url);
-    console.log("✅ clients router file mounted from:", require.resolve("./routes/clients"));
+    console.log("HIT /api/clients ->", req.method, req.url);
+    console.log("clients router file mounted from:", require.resolve("./routes/clients"));
     next();
   },
   clientsRoutes
@@ -280,7 +278,6 @@ return res.json({
 
   /* =========================
     404 DEBUG SOLO PARA /api
-    (IMPORTANTE: antes de servir React)
   ========================= */
   app.use("/api", (req, res) => {
     return res.status(404).json({
@@ -370,7 +367,7 @@ const server = app.listen(port, "0.0.0.0", () => {
 server.keepAliveTimeout = 120000;
 server.headersTimeout = 120000;
 
-// ✅ Mantener vivo el event loop en dev y además detectar quién cierra el proceso
+// Mantener vivo el event loop en dev y además detectar quién cierra el proceso
 const __DEV_KEEPALIVE__ = setInterval(() => {
   // noop
 }, 30000);

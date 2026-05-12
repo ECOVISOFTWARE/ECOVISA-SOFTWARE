@@ -19,7 +19,7 @@ console.log("🧩 inventory routes has:", {
   topIn: "/top-in",
   topOut: "/top-out",
 });
-// ✅ DEBUG: confirma que el router está montado y accesible
+// DEBUG: confirma que el router está montado y accesible
 router.get("/ping", (req, res) => {
   res.json({ ok: true, route: "/api/inventory/ping" });
 });
@@ -377,7 +377,7 @@ router.get("/stock/:productId/movements", async (req, res) => {
   });
 });
 
-/* ✅ Alias plano enriquecido para detalle visual del historial */
+
 router.get("/stock-movements/:productId", async (req, res) => {
   const { productId } = req.params;
   const limit = Math.min(Number(req.query.limit || 50), 200);
@@ -509,8 +509,7 @@ router.post("/movements", async (req, res) => {
   }
 
   /* =========================
-     ✅ VALIDACIÓN STOCK (solo OUT)
-     - si quieren sacar más de lo que hay => 400
+     VALIDACIÓN STOCK (solo OUT)
   ========================= */
   let stockById = new Map();
 
@@ -849,7 +848,6 @@ router.get("/kardex", async (req, res) => {
 
 /* =========================
    Analytics (rendimiento)
-   - devuelve series día -> qty IN/OUT
 ========================= */
 router.get("/analytics", async (req, res) => {
   const days = Math.min(Math.max(Number(req.query.days || 30), 7), 365);
@@ -868,12 +866,6 @@ router.get("/analytics", async (req, res) => {
 });
 
 
-
-/* =========================
-   Metrics
-   - Eliminado del frontend de inventario
-   - El valor económico ahora vive en cotizaciones / ventas
-========================= */
 
 
 /* =========================

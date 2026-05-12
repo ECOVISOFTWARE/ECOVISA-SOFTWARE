@@ -5,7 +5,7 @@
    - layout estable (sin hover transform que "brinca")
 ========================= */
 
-/* ✅ tokens (una sola vez) */
+
 :root{
   --inv-bg: #f6f7fb;
   --inv-card: #ffffff;
@@ -43,7 +43,7 @@
   color: var(--inv-text);
 }
 
-/* ✅ fondo Monday (no lila) */
+
 .invWrap.invMonday{
   background: transparent;
 }
@@ -392,17 +392,17 @@ body{
    - evita deformaciones/cortes en charts
 ========================= */
 .invDashGridPro .invCard{
-  min-height: 360px; /* ✅ todas parejas */
+  min-height: 360px; 
 }
 
 @media (max-width: 1180px){
   .invDashGridPro .invCard{ min-height: 360px; }
 }
 @media (max-width: 560px){
-  .invDashGridPro .invCard{ min-height: auto; } /* ✅ en celular que fluya */
+  .invDashGridPro .invCard{ min-height: auto; }
 }
 
-/* ✅ ECharts siempre toma altura real del contenedor */
+
 .invEChartWrap{
   width: 100%;
   min-height: 260px;
@@ -618,8 +618,8 @@ body{
   color: var(--inv-soft);
   display: flex;
   align-items: center;
-  justify-content: center;   /* ✅ default CENTER */
-  text-align: center;        /* ✅ default CENTER */
+  justify-content: center;   
+  text-align: center;        
   border-right: 1px solid var(--inv-line);
   white-space: nowrap;
   overflow: hidden;
@@ -636,7 +636,7 @@ body{
   border-right: 0;
 }
 
-/* ✅ si quieres permitir textos largos SOLO cuando lo pidas */
+
 .invMiniGridCell.l{
   justify-content: flex-start;
   text-align: left;
@@ -1021,29 +1021,25 @@ body{
   gap: var(--inv-g);
 }
 /* =========================================================
-   ✅ INVENTORY RESPONSIVE PATCH (Phone/Tablet/Desktop)
-   Pegar al FINAL de Inventory.css
+   INVENTORY RESPONSIVE PATCH (Phone/Tablet/Desktop)
 ========================================================= */
 
 /* 0) NO lateral scroll + viewport safe */
 .invWrap{
-  max-width: none;           /* ✅ deja que use todo el ancho */
+  max-width: none;         
 }
 
-/* ✅ modo fluido: NO dupliques padding con app-main */
 .invWrap.invFluid{
   width: 100%;
   margin: 0 auto;
-  padding: 0;               /* ✅ app-main ya da padding */
+  padding: 0;               
 }
 
-/* ✅ en caso de que Inventory se use fuera del shell,
-   damos un fallback de padding mínimo */
 @supports not (padding: max(1px, 2px)){
   .invWrap.invFluid{ padding: 12px; }
 }
 
-/* 1) TOP BAR - responsive real */
+/* 1) TOP BAR - responsive */
 .invTop{
   grid-template-columns: 1fr minmax(240px, 720px) 1fr;
 }
@@ -1062,12 +1058,12 @@ body{
     gap: 10px;
   }
   .invTopRight .invBtn{
-    flex: 1;               /* ✅ botones ocupan ancho en móvil */
+    flex: 1;               
     justify-content: center;
   }
 }
 
-/* 2) Tabs - wrap bonito y tocable */
+
 .invTabs{
   gap: 8px;
   flex-wrap: wrap;
@@ -1079,7 +1075,7 @@ body{
   }
 }
 
-/* 3) KPIs - que no se vean apretados en teléfono */
+
 .invKpiRow{
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
@@ -1093,7 +1089,7 @@ body{
     overflow-y: visible;
     gap: 10px;
     padding-bottom: 8px;
-    /* scroll suave sin scrollbar visible */
+    
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -1105,7 +1101,7 @@ body{
   }
 
   .invKpiTile{
-    flex: 0 0 160px;          /* ancho fijo compacto */
+    flex: 0 0 160px;          
     min-width: 160px;
     height: 110px;
     min-height: 110px;
@@ -1155,17 +1151,17 @@ body{
   }
 }
 
-/* 5) Cards - quita min-height rígida en móvil/tablet */
+/* 5) Cards  */
 .invDashGridPro .invCard{
-  min-height: 340px;       /* desktop: se ven parejas */
+  min-height: 340px;       
 }
 @media (max-width: 720px){
   .invDashGridPro .invCard{
-    min-height: unset;     /* ✅ móvil: que fluya */
+    min-height: unset;    
   }
 }
 
-/* 6) CardTopCompact - que el header no se rompa */
+/* 6) CardTopCompact  */
 .invCardTopCompact{
   flex-wrap: wrap;
   align-items: flex-start;
@@ -1177,7 +1173,7 @@ body{
   flex: 0 0 auto;
 }
 
-/* ✅ ProSelect en headers (filtros) que no rompa */
+
 .invCardTopCompact select,
 .invCardTopCompact .proSelect,
 .invCardTopCompact .ProSelect{
@@ -1191,18 +1187,17 @@ body{
 @media (max-width: 560px){
   .invEChartWrap{
     min-height: 220px;
-    height: 220px;         /* ✅ evita “grandes vacíos” */
+    height: 220px;         
   }
 }
 
-/* 8) Tablas - “modo móvil” (sin min-width 760) */
+/* 8) Tablas  */
 @media (max-width: 720px){
   .invTable{
-    min-width: 0;          /* ✅ deja de forzar scroll gigante */
+    min-width: 0;         
   }
 
-  /* ✅ en móvil, tabla tipo cards si quieres sin reescribir JSX:
-     hacemos scroll horizontal ligero con buena UX */
+
   .invTableWrap{
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1295,25 +1290,25 @@ body{
   min-width: 0;
 }
 /* =========================================================
-   ✅ Card header tools (Range + Segmented + ⋮) responsive
+   Card header tools (Range + Segmented + ⋮) responsive
 ========================================================= */
 .invCardTools{
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  flex-wrap: wrap;     /* ✅ clave: permite bajar de línea */
+  flex-wrap: wrap;     
   min-width: 0;
 }
 
 .invRange{
-  min-width: 180px;    /* desktop ok */
+  min-width: 180px;   
 }
 
 .invSeg{
   display: flex;
   gap: 8px;
-  flex-wrap: nowrap;   /* desktop: en una línea */
+  flex-wrap: nowrap;  
   min-width: 0;
 }
 
@@ -1321,7 +1316,6 @@ body{
   flex: 0 0 auto;
 }
 
-/* ✅ Mobile: todo cabe dentro de la card */
 @media (max-width: 560px){
   .invCardTools{
     justify-content: stretch;
@@ -1330,24 +1324,24 @@ body{
 
   .invRange{
     flex: 1 1 100%;
-    min-width: 0;      /* ✅ mata el “minWidth 180” en móvil */
+    min-width: 0;      
   }
 
   .invSeg{
     flex: 1 1 100%;
     width: 100%;
-    flex-wrap: wrap;   /* ✅ si no cabe, se acomoda */
+    flex-wrap: wrap;   
   }
 
   .invSeg .invTab{
-    flex: 1 1 0;       /* ✅ 2 botones, mitad y mitad */
+    flex: 1 1 0;       
     display: inline-flex;
     justify-content: center;
     white-space: nowrap;
   }
 
   .invDots{
-    margin-left: auto; /* ✅ ⋮ se pega a la derecha y ya no empuja nada afuera */
+    margin-left: auto; 
   }
 }
 /* =========================

@@ -33,26 +33,25 @@ export default function ClientSelectPro({
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (!open) return;
     const text = String(q || "").trim();
 
-    if (!text) {
-      setResults([]);
-      return;
-    }
+    // Sin texto → carga inmediata todos los clientes; con texto → debounce 220ms
+    const delay = text ? 220 : 0;
 
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const resp = await apiFetch(`/api/quotes/clients?q=${encodeURIComponent(text)}`);
+        const qs = text ? `?q=${encodeURIComponent(text)}` : "";
+        const resp = await apiFetch(`/api/clients${qs}`);
         setResults(resp?.data || []);
       } catch (_) {
         setResults([]);
       } finally {
         setLoading(false);
       }
-    }, 280);
+    }, delay);
 
     return () => clearTimeout(t);
   }, [q, open]);
@@ -120,9 +119,9 @@ export default function ClientSelectPro({
         <div className="clientPro-menu">
           {loading ? (
             <div className="clientPro-state">Buscando clientes...</div>
-          ) : results.length === 0 ? (
+) : results.length === 0 ? (
             <div className="clientPro-state">
-              {String(q || "").trim() ? "Sin resultados" : "Escribe para buscar clientes"}
+              {String(q || "").trim() ? "Sin resultados para esa búsqueda" : "Sin clientes registrados"}
             </div>
           ) : (
             results.map((client) => (

@@ -13,7 +13,7 @@ html, body, #root {
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* 🔥 jamás lateral */
+  overflow-x: hidden; 
   overscroll-behavior: none;
 }
 
@@ -37,18 +37,16 @@ code {
    - escalable en PC / tablet / móvil / pantallas mini
 ========================================================= */
 :root{
-  /* spacing fluido */
   --g: clamp(8px, 2.2vw, 14px);
   --padX: clamp(12px, 3.5vw, 22px);
 
-  /* radius & shadow */
   --r: clamp(14px, 2.2vw, 20px);
   --shadow: 0 16px 46px rgba(0,0,0,0.18);
 
-  /* tamaño mínimo de tile (auto-fit) */
+
   --tileMin: clamp(160px, 42vw, 320px);
 
-  /* safe-area (iOS notch) */
+
   --safeL: env(safe-area-inset-left);
   --safeR: env(safe-area-inset-right);
   --safeB: env(safe-area-inset-bottom);

@@ -1,8 +1,8 @@
 const router = require("express").Router();
 const { supabaseAdmin } = require("../supabaseAdmin");
 
-// ✅ DEBUG: confirma que ESTE archivo se está cargando
-console.log("✅ ADMIN ROUTES LOADED:", __filename);
+// DEBUG: confirma que ESTE archivo se está cargando
+console.log("ADMIN ROUTES LOADED:", __filename);
 
 async function replaceLevelPermissions(levelId, permissions) {
   const safePermissions = Array.isArray(permissions) ? permissions : [];
@@ -37,10 +37,10 @@ async function replaceLevelPermissions(levelId, permissions) {
   if (insertError) throw new Error(insertError.message);
 }
 
-// ✅ DEBUG: confirma que el PUT/DELETE realmente entra al router admin
+// DEBUG: confirma que el PUT/DELETE realmente entra al router admin
 router.use((req, res, next) => {
   if (req.url.startsWith("/departments/")) {
-    console.log("✅ ADMIN HIT:", req.method, req.originalUrl);
+    console.log("ADMIN HIT:", req.method, req.originalUrl);
   }
   next();
 });
@@ -423,7 +423,7 @@ router.get("/levels/with-permissions", async (req, res) => {
   return res.json({ data: enriched });
 });
 
-// ✅ DEBUG: lista rutas registradas en este router (para confirmar que existe access-policies)
+// DEBUG: lista rutas registradas en este router (para confirmar que existe access-policies)
 router.get("/__routes", (req, res) => {
   const routes = [];
   router.stack.forEach((layer) => {

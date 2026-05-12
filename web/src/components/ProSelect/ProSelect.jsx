@@ -110,20 +110,20 @@ export default function ProSelect({
     setActiveIndex(startIdx);
   }, [options, selectedIndex]);
 
-  // posicionar en portal al abrir
+  
   useEffect(() => {
     if (!open) return;
     computePosition();
   }, [open, computePosition]);
 
-  // ✅ re-posicionar al scroll/resize (muy importante en portals)
+ 
   useEffect(() => {
     if (!open) return;
 
     const onScroll = () => computePosition();
     const onResize = () => computePosition();
 
-    window.addEventListener("scroll", onScroll, true); // true = captura scroll de contenedores
+    window.addEventListener("scroll", onScroll, true); 
     window.addEventListener("resize", onResize);
 
     return () => {
@@ -132,7 +132,7 @@ export default function ProSelect({
     };
   }, [open, computePosition]);
 
-  // ✅ cerrar al click afuera (robusto: pointerdown + capture)
+  
   useEffect(() => {
     if (!open) return;
 
@@ -142,7 +142,7 @@ export default function ProSelect({
 
       const t = e.target;
 
-      // click en botón o dentro del menú => no cerrar
+     
       if (b && b.contains(t)) return;
       if (m && m.contains(t)) return;
 
@@ -153,7 +153,7 @@ export default function ProSelect({
     return () => window.removeEventListener("pointerdown", onPointerDown, true);
   }, [open, closeMenu]);
 
-  // ✅ teclado global cuando está abierto
+  
   useEffect(() => {
     function onKey(e) {
       if (!open) return;
@@ -248,7 +248,7 @@ export default function ProSelect({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, options, activeIndex, onChange, typeBuf, searchable, closeMenu]);
 
-  // ✅ limpiar timer al desmontar
+  
   useEffect(() => {
     return () => {
       if (typeTimer.current) clearTimeout(typeTimer.current);

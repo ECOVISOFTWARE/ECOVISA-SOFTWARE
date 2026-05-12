@@ -200,8 +200,7 @@ const CARD_VIEWS = [
   { key: "pie", label: "Pastel" },
 ];
 // =========================
-// ✅ Filtros por CARD (ProSelect) - GLOBAL
-// (CardRangeFilter está fuera de Inventory, por eso debe existir aquí)
+// Filtros por CARD (ProSelect) - GLOBAL
 // =========================
 const CARD_RANGES = [
   { key: "7", label: "Hace 7 días", type: "days", value: 7 },
@@ -417,14 +416,13 @@ function CardMenu({ open, anchorRight = false, onPick }) {
   );
 }
 function MiniTableView({ rows = [], cols = [] }) {
-  // cols: [{ key, label, align?: "l"|"c"|"r", render?: (row)=>node }]
   return (
     <div className="invMiniGrid">
       <div className="invMiniGridHead">
         {cols.map((c) => (
           <div
             key={c.key}
-            className={`invMiniGridCell ${c.align || "c"}`}   // ✅ default CENTER
+            className={`invMiniGridCell ${c.align || "c"}`}   
             title={String(c.label || "")}
           >
             {c.label}
@@ -448,7 +446,7 @@ function MiniTableView({ rows = [], cols = [] }) {
               {cols.map((c) => (
                 <div
                   key={c.key}
-                  className={`invMiniGridCell ${c.align || "c"}`} // ✅ default CENTER
+                  className={`invMiniGridCell ${c.align || "c"}`} 
                   title={String((r?.[c.key] ?? "") || "")}
                 >
                   {c.render ? c.render(r) : (r?.[c.key] ?? "-")}
@@ -675,10 +673,9 @@ function RenderCardView({
 
   chartTone = "teal", // teal | blue | green | red | purple
 
-  // ✅ altura controlable (para que la card grande NO tenga huecos)
   height = 240,
 
-  // ✅ estado vacío profesional
+
   emptyTitle = "Sin datos",
   emptySubtitle = "No hay información suficiente para mostrar esta tarjeta.",
 }) {
@@ -702,7 +699,7 @@ const renderEmpty = () => (
     </div>
   );
 
-  // ✅ tabla
+
   if (view === "table") {
     if (!hasTableData) return renderEmpty();
 
@@ -1085,28 +1082,27 @@ const [analytics, setAnalytics] = useState([]);
 const [activity, setActivity] = useState([]);
 
 const [performanceSummary, setPerformanceSummary] = useState(null);
-  // ✅ TOP widgets (dashboard pro)
   const [topStock, setTopStock] = useState([]);
   const [topIn, setTopIn] = useState([]);
   const [topOut, setTopOut] = useState([]);
 
-  // ✅ 5) Top Entradas + Top Salidas (toggle tipo carrusel)
+  // 5) Top Entradas + Top Salidas (toggle tipo carrusel)
   const [topIOPane, setTopIOPane] = useState("IN");   // IN | OUT
 
 // ui
 const [q, setQ] = useState("");
-const [onlyLowStock, setOnlyLowStock] = useState(false); // ✅ NUEVO
+const [onlyLowStock, setOnlyLowStock] = useState(false); 
 const [movementOpen, setMovementOpen] = useState(false);
 const [movementType, setMovementType] = useState("IN");
 const [movementReason, setMovementReason] = useState("");
 const [movementItems, setMovementItems] = useState([]);
 
-// ✅ dirty control (movimiento)
+// dirty control (movimiento)
 const [movementDirty, setMovementDirty] = useState(false);
 
 const [productOpen, setProductOpen] = useState(false);
 
-// ✅ create | edit
+// create | edit
 const [productMode, setProductMode] = useState("create");
 const [editingProductId, setEditingProductId] = useState(null);
 
@@ -1116,21 +1112,21 @@ const [productDraft, setProductDraft] = useState({
   unit: "pz",
   stock_min: "",
 });
-// ✅ dirty control (producto)
+// dirty control (producto)
 const [productDirty, setProductDirty] = useState(false);
 const [productSkuTouched, setProductSkuTouched] = useState(false);
 
-// ✅ detalle de movimientos por producto (stock)
+// detalle de movimientos por producto (stock)
 const [stockDetailOpen, setStockDetailOpen] = useState(false);
 const [stockDetailLoading, setStockDetailLoading] = useState(false);
 const [selectedStockProduct, setSelectedStockProduct] = useState(null);
 const [stockMovementRows, setStockMovementRows] = useState([]);
 
-// ✅ preview profesional de movimiento individual
+// preview profesional de movimiento individual
 const [movementPreviewOpen, setMovementPreviewOpen] = useState(false);
 const [selectedMovement, setSelectedMovement] = useState(null);
 
-// ✅ modal profesional de edición de movimiento
+// modal profesional de edición de movimiento
 const [movementEditOpen, setMovementEditOpen] = useState(false);
 const [editingMovementItem, setEditingMovementItem] = useState(null);
 const [movementEditDraft, setMovementEditDraft] = useState({
@@ -1143,9 +1139,9 @@ const [productPageSize, setProductPageSize] = useState(10);
 
 const [stockPage, setStockPage] = useState(1);
 const [stockPageSize, setStockPageSize] = useState(10);
-  // ✅ menú abierto (id de la card) o null
+  // menú abierto (id de la card) o null
   const [openCardMenu, setOpenCardMenu] = useState(null);
-// ✅ vista por card (table|bar|line|pie)
+// vista por card (table|bar|line|pie)
 const [cardView, setCardView] = useState({
   // dashboard
   topStock: "bar",
@@ -1211,14 +1207,14 @@ const allowed = useMemo(
 );
 
 /* =========================
-   ✅ CARGA PRINCIPAL (loadAll)
+   CARGA PRINCIPAL (loadAll)
    - days controla analytics/performanceSummary/top/activity
    - lightweight=true evita recargar products/stock/policies cada vez
 ========================= */
 async function loadAll({ days = 30, lightweight = false } = {}) {
   setLoading(true);
 
-  // ✅ policies solo si no es lightweight
+  
   let p = { data: [] };
   if (!lightweight) {
     p = await apiFetch("/api/admin/access-policies").catch((e) => {
@@ -1228,7 +1224,6 @@ async function loadAll({ days = 30, lightweight = false } = {}) {
   }
 
   const endpoints = [
-    // solo al cargar “completo”
     ...(!lightweight
       ? [
           { key: "products", url: "/api/inventory/products" },
@@ -1236,7 +1231,7 @@ async function loadAll({ days = 30, lightweight = false } = {}) {
         ]
       : []),
 
-    // dashboard/analytics depende del periodo
+  
     { key: "analytics", url: `/api/inventory/analytics?days=${days}` },
     { key: "performanceSummary", url: `/api/inventory/performance-summary?days=${days}`, optional: true },
 
@@ -1296,17 +1291,17 @@ async function loadAll({ days = 30, lightweight = false } = {}) {
 }
 
 /* =========================
-   ✅ Recargar dashboard por periodo
+   Recargar dashboard por periodo
 ========================= */
 async function reloadDashboardDays(days) {
   return loadAll({ days, lightweight: true });
 }
 useEffect(() => {
   loadAll();
-  // eslint-disable-next-line
+  
 }, []);
 useEffect(() => {
-  // fuerza a ECharts a recalcular layout (móvil/rotación/cambio tab)
+  
   const t = setTimeout(() => {
     window.dispatchEvent(new Event("resize"));
   }, 80);
@@ -1322,7 +1317,7 @@ useEffect(() => {
 
   const connect = () => {
     try {
-      // ✅ arma URL igual que apiFetch (evita /api/api si API_BASE="/api")
+      // arma URL igual que apiFetch (evita /api/api si API_BASE="/api")
       const sseUrl = (() => {
         const base = String(API_BASE || "").replace(/\/+$/, ""); // sin slash final
         let p = "/api/inventory/stream";
@@ -1339,7 +1334,7 @@ es.onmessage = (ev) => {
     const msg = JSON.parse(ev.data || "{}");
     if (!msg?.type) return;
 
-    // ✅ toaster LOW STOCK (a todos con inventario abierto)
+    // toaster LOW STOCK (a todos con inventario abierto)
     if (msg.type === "LOW_STOCK") {
       const name = msg.name || "Producto";
       const rem = Number(msg.remaining || 0);
@@ -1370,7 +1365,7 @@ es.onmessage = (ev) => {
       });
     }
 
-    // ✅ recarga datos (stock / productos / actividad)
+    // recarga datos (stock / productos / actividad)
     if (
       msg.type === "MOVEMENT_CREATED" ||
       msg.type === "MOVEMENT_UPDATED" ||
@@ -1470,7 +1465,7 @@ const filteredStock = useMemo(() => {
   return out;
 }, [stock, q, onlyLowStock]);
 /* =========================
-   ✅ DataGrid: Products & Stock
+   DataGrid: Products & Stock
 ========================= */
 
 const stockByProductId = useMemo(() => {
@@ -1752,7 +1747,7 @@ async function saveMovement() {
     }))
     .filter((x) => x.product_id && x.qty > 0);
 
-  // ✅ CIERRA MODAL ANTES de cualquier SweetAlert
+  // CIERRA MODAL ANTES de cualquier SweetAlert
   setMovementOpen(false);
   await new Promise((r) => setTimeout(r, 180));
 
@@ -2181,7 +2176,7 @@ async function saveProduct() {
 
   const isEdit = productMode === "edit" && !!editingProductId;
 
-  // ✅ CIERRA MODAL ANTES de cualquier SweetAlert
+  // CIERRA MODAL ANTES de cualquier SweetAlert
   setProductOpen(false);
   await new Promise((r) => setTimeout(r, 180));
 
@@ -2231,7 +2226,7 @@ async function saveProduct() {
   setTab("products");
 }
 /* =========================
-   ✅ 2.5 Confirmación al cerrar (ESC / backdrop / X / Cancelar)
+   2.5 Confirmación al cerrar (ESC / backdrop / X / Cancelar)
 ========================= */
 async function confirmCloseIfDirty(kind) {
   const isDirty = kind === "product" ? productDirty : movementDirty;
@@ -2329,7 +2324,7 @@ return (
 </div>
   </div>
 
-  {/* ✅ Búsqueda centrada entre título y botones */}
+  {/* Búsqueda centrada entre título y botones */}
   <div className="invTopMid">
     <div className="invSearch">
       <TbSearch />
@@ -2341,7 +2336,7 @@ return (
     </div>
   </div>
 
-  {/* ✅ Botones arriba derecha */}
+  {/* Botones arriba derecha */}
   <div className="invTopRight">
     <button className="invBtn invIn" type="button" onClick={() => openMovement("IN")}>
       <TbArrowBigUpLines /> Entrada
@@ -2376,7 +2371,7 @@ return (
   <div className="invLoading">Cargando inventario…</div>
 ) : (
   <>
-    {/* ✅ Banner de error si algo falló */}
+    {/* Banner de error si algo falló */}
     {loadError ? (
       <div className="invCard" style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 800, marginBottom: 6 }}>⚠️ Inventario: carga parcial</div>
@@ -2692,7 +2687,7 @@ return (
     <RenderCardView
       view={cardView[topIOPane === "IN" ? "topIn" : "topOut"] || "bar"}
       chartTone={topIOPane === "IN" ? "green" : "red"}
-      height={320}  // ✅ más grande “como 2 cards”
+      height={320}  
       items={(topIOPane === "IN" ? topIn : topOut).map((x) => ({
         label: x.name || x.product_name || "-",
         value: Number(x.qty || 0),

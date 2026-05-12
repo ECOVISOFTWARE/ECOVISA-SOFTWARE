@@ -37,7 +37,7 @@
   }
   .nav-burger:hover{ background: rgba(255,255,255,0.08); }
 
-  /* LOGO limpio */
+  /* LOGO */
   .nav-logoBtn{
     border: 0;
     background: transparent;
@@ -62,7 +62,6 @@
     justify-content: center;
     align-items: center;
 
-    /* 2) más separación entre iconos */
     gap: 26px;
 
     overflow-x: auto;
@@ -74,11 +73,11 @@
 
 
 /* =========================
-   ACTIVE PILL (circulo animado)
+   ACTIVE PILL
 ========================= */
 .nav-center{
   position: relative;
-  isolation: isolate; /* evita stacking raro */
+  isolation: isolate;
 }
 
 .nav-activePill{
@@ -101,8 +100,8 @@
 
   opacity: 0;
   will-change: transform;
-  transform: translate3d(0,0,0); /* ✅ estabiliza GPU */
-  backface-visibility: hidden;  /* ✅ evita “sesgo” raro */
+  transform: translate3d(0,0,0); 
+  backface-visibility: hidden;  
   z-index: 0;
 }
 
@@ -110,19 +109,18 @@
   opacity: 1;
 }
 
-/* botones encima del pill */
+
 .nav-iconBtn{
   position: relative;
   z-index: 1;
 }
-/* Activo estable (sin pill deslizante) */
-/* ✅ El indicador REAL es el pill. El botón activo solo cambia ligeramente */
+
 .nav-iconBtn.active{
   background: transparent;
   box-shadow: none;
   color: rgba(255,255,255,0.98);
 }
-  /* icon buttons (sin contenedores pesados) */
+  
   .nav-iconBtn{
     position: relative;
     width: 44px;
@@ -150,7 +148,7 @@
     place-items: center;
   }
 
-  /* Tooltip pro */
+  /* Tooltip */
   .nav-iconBtn[data-tip]::after{
     content: attr(data-tip);
     position: absolute;
@@ -200,18 +198,18 @@
     position: relative;
   }
   /* ===== NOTIF BELL ===== */
-  /* ===== BELL (igual que módulos) ===== */
+  /* ===== BELL ===== */
   .nav-bellBtn{
-    margin-right: 10px;         /* conserva separación con el user */
-    position: relative;         /* para badge */
+    margin-right: 10px;         
+    position: relative;         
   }
 
-  /* El ícono FiBell ya viene más chico; igualamos */
+
   .nav-bellBtn svg{
     font-size: 20px;
   }
 
-  /* Badge abajo-derecha sin tapar la campana */
+
   .nav-bellBadge{
     position: absolute;
     right: -2px;
@@ -288,7 +286,7 @@
     right: 0;
     top: 62px;
 
-    /* ✅ más pequeño */
+
     width: 320px;
     border-radius: 16px;
     padding: 10px;
@@ -297,7 +295,7 @@
     border: 1px solid rgba(255,255,255,0.10);
     box-shadow: 0 28px 80px rgba(0,0,0,0.45);
 
-    /* ✅ animación */
+    
     transform-origin: top right;
     animation: profilePopIn 160ms ease;
   }
@@ -470,7 +468,7 @@
     opacity: 1;
   }
 
-  /* ✅ Backdrop ATRÁS del panel (sin taparlo) */
+  
   .nav-drawer-backdrop{
     position: absolute;
     inset: 0;
@@ -491,14 +489,14 @@
     opacity: 1;
   }
 
-  /* ✅ Panel ENCIMA (nítido, NO borroso) */
+  
   .nav-drawer-inner{
     position: absolute;
     top: 0;
     left: 0;
     z-index: 1;
 
-    /* ✅ alto REAL visible del móvil */
+    
     height: 100dvh;
     width: min(86vw, 330px);
 
@@ -509,7 +507,7 @@
     display: flex;
     flex-direction: column;
 
-    /* ✅ deja espacio para barra inferior/safe-area */
+    
     padding: 10px;
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     gap: 10px;
@@ -536,7 +534,7 @@
   }
 
   .nav-drawer-logo{
-    height: 40px;               /* ✅ más chico */
+    height: 40px;         
     width: auto;
     object-fit: contain;
   }
@@ -554,18 +552,18 @@
   .nav-drawer-close:hover{ background: rgba(255,255,255,0.10); }
   .nav-drawer-close:active{ transform: scale(0.98); }
 
-  /* ✅ LISTA SIN SCROLL y que QUEPA */
+ 
   .nav-drawer-list{
     display: flex;
     flex-direction: column;
-    gap: 8px;                   /* ✅ menos gap */
-    flex: 0 0 auto;             /* ✅ NO crece, no empuja logout */
-    overflow: visible;          /* ✅ sin scroll */
+    gap: 8px;                   
+    flex: 0 0 auto;            
+    overflow: visible;          
   }
 
-  /* items más compactos para que quepa TODO */
+
   .nav-drawer-item{
-    height: 44px;               /* ✅ clave para que quepa todo */
+    height: 44px;              
     border-radius: 14px;
     border: 0;
 
@@ -596,19 +594,19 @@
   }
 
   .nav-drawer-ico{
-    font-size: 19px;            /* ✅ un toque más chico */
+    font-size: 19px;            
     display: grid;
     place-items: center;
   }
   .nav-drawer-txt{ font-size: 13px; }
 
-  /* ✅ Logout SIEMPRE visible al fondo */
+ 
   .nav-drawer-logout{
     margin-top: auto;
     height: 46px;
     width: 100%;
 
-    /* ✅ evita que se pegue a la barra inferior */
+    
     margin-bottom: env(safe-area-inset-bottom, 0px);
 
     border-radius: 14px;
@@ -977,8 +975,8 @@
   .nav-notifFooter{
     margin-top: 10px;
     width: 100%;
-    height: 48px;          /* igual que logout */
-    border-radius: 16px;   /* igual que logout */
+    height: 48px;          
+    border-radius: 16px;   
     border: 0;
     cursor: pointer;
     font-weight: 1000;
@@ -988,7 +986,7 @@
     cursor: not-allowed;
     filter: none;
   }
-  /* verde sólido tipo "Cerrar sesión" */
+  
   .nav-notifFooter.solid{
     background: rgba(122, 217, 87, 1);
     color: rgba(6, 26, 45, 0.98);
@@ -1027,36 +1025,33 @@
     max-width: 200px;
   }
 
-  /* ✅ Evita que al recargar se vea "hover" por focus restaurado */
+  
 .nav-iconBtn:focus{
   outline: none;
-  background: transparent; /* mantiene el look limpio */
+  background: transparent; 
   box-shadow: none;
 }
 
-/* ✅ Accesibilidad: solo muestra foco cuando es teclado */
 .nav-iconBtn:focus-visible{
   outline: 1px solid rgba(255,255,255,0.22);
   outline-offset: 2px;
 }
 /* =========================================================
    MOBILE NAV FIX (evita corte / overflow)
-   - NO afecta PC
 ========================================================= */
 @media (max-width: 760px){
   .nav-row{
-    /* menos padding en móvil (sin matar el diseño) */
+   
     padding: 0 14px 0 14px;
     gap: 12px;
   }
 
   .nav-logo-img{
-    /* logo más compacto para que no empuje todo */
+    
     height: 44px;
   }
 
   .nav-userBtn{
-    /* botón usuario un poco más compacto */
     height: 42px;
     padding: 0 10px 0 6px;
     gap: 8px;

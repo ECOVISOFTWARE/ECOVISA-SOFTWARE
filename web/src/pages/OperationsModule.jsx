@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import Swal from "sweetalert2";
 import { apiFetch } from "../api";
+import ClientSelectPro from "../components/ClientSelectPro";
 import "./OperationsModule.css";
 import {
   TbTruck, TbPlus, TbSearch, TbEdit, TbTrash, TbRefresh,
-  TbX, TbAlertTriangle, TbClock, TbMapPin, TbUser,
-  TbActivity, TbEye, TbNotes, TbArrowRight,
+  TbX, TbMapPin, TbBath, TbClipboardList,
+  TbCurrencyDollar, TbFileInvoice,
+  TbFilter, TbBuildingStore,
+  TbUser, TbArrowRight, TbClock, TbActivity,
+  TbAlertTriangle, TbNotes, TbEye,
+  TbMapSearch, TbReceipt2,
 } from "react-icons/tb";
 
 // ─── Constants ────────────────────────────────────────────────
@@ -91,10 +96,11 @@ function PriorityBadge({ priority }) {
 function emptyOperation(worker) {
   return {
     title: "",
-    status: "pending",
+    status: "scheduled",
     priority: "medium",
     unit_name: "",
     operator_name: "",
+    client_id: "",
     client_name: "",
     origin: "",
     destination: "",
@@ -102,106 +108,567 @@ function emptyOperation(worker) {
     real_departure_at: "",
     real_arrival_at: "",
     observations: "",
+
+    control_date: new Date().toISOString().slice(0, 10),
+    branch: "MOCHIS",
+    city: "",
+    location: "",
+    full_address: "",
+    latitude: "",
+    longitude: "",
+    google_maps_url: "",
+    warehouse_exit: "",
+    delivery_date: "",
+    removed: false,
+
+    sanitary_qty: 0,
+    sanitary_owned: 0,
+    sanitary_external: 0,
+    sink_qty: 0,
+    trailer_qty: 0,
+
+    unit_price: 0,
+    total_price: 0,
+    service_frequency: 1,
+    service_days: 0,
+    billing_period: 1,
+    billing_start: "",
+    billing_end: "",
+    billing_alert: "------",
+    invoice_number: "",
+    invoice_id: "",
+    invoice_status: "pending",
+
+    monday: false,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
+
     created_by: worker?.id || null,
   };
 }
 
-// ─── Operation Form Modal ─────────────────────────────────────
-function OperationFormModal({ open, mode, form, setForm, onClose, onSave }) {
-  if (!open) return null;
-  const ro = mode === "view";
+function getBillingRange(deliveryDate, billingPeriod = 1) {
+  if (!deliveryDate) {
+    return { billing_start: "", billing_end: "", billing_alert: "------" };
+  }
 
-  const inp = (label, key, type = "text", placeholder = "") => (
-    <div className="opsField">
-      <label>{label}</label>
-      <input className="opsInput" type={type} value={form[key] ?? ""} readOnly={ro}
-        placeholder={placeholder}
-        onChange={(e) => !ro && setForm((p) => ({ ...p, [key]: e.target.value }))} />
-    </div>
+  const start = new Date(`${deliveryDate}T00:00:00`);
+  if (Number.isNaN(start.getTime())) {
+    return { billing_start: "", billing_end: "", billing_alert: "------" };
+  }
+
+  const period = Math.max(1, Number(billingPeriod || 1));
+  const billingStart = new Date(start);
+  billingStart.setDate(billingStart.getDate() + ((period - 1) * 28));
+
+  const billingEnd = new Date(billingStart);
+  billingEnd.setDate(billingEnd.getDate() + 27);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Fórmula Excel: =SI(Y(Final<=HOY, Periodo>0), "Facturar", "------")
+  const shouldBill = billingEnd <= today && period > 0;
+
+  return {
+    billing_start : billingStart.toISOString().slice(0, 10),
+    billing_end   : billingEnd.toISOString().slice(0, 10),
+    billing_alert : shouldBill ? "Facturar" : "------",
+  };
+}
+
+function normalizeCity(value) {
+  const text = String(value || "").toUpperCase();
+  if (text.includes("GUASAVE")) return "GUASAVE";
+  if (text.includes("MOCHIS") || text.includes("LOS MOCHIS")) return "LOS MOCHIS";
+  return text || "SIN CIUDAD";
+}
+
+function isLMV(row) {
+  return Boolean(row.monday || row.wednesday || row.friday);
+}
+
+function isMJS(row) {
+  return Boolean(row.tuesday || row.thursday || row.saturday);
+}
+
+function buildRouteRows(rows, city, group) {
+  return (rows || [])
+    .filter((row) => !row.removed)
+    .filter((row) => normalizeCity(row.city) === city)
+    .filter((row) => group === "LMV" ? isLMV(row) : isMJS(row))
+    .map((row) => ({
+      id: row.id,
+      client_name: row.client_name || "—",
+      sanitary_qty: Number(row.sanitary_qty || row.quantity || 0),
+      sink_qty: Number(row.sink_qty || 0),
+      trailer_qty: Number(row.trailer_qty || 0),
+      location: row.location || row.destination || "—",
+      invoice_number: row.invoice_number || "",
+      billing_alert: row.billing_alert || "------",
+      status: row.status || "pending",
+    }));
+}
+
+function RouteExcelBlock({ title, subtitle, cityLabel, color = "yellow", rows }) {
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.sanitary += Number(row.sanitary_qty || 0);
+      acc.sink += Number(row.sink_qty || 0);
+      acc.trailer += Number(row.trailer_qty || 0);
+      return acc;
+    },
+    { sanitary: 0, sink: 0, trailer: 0 }
   );
 
   return (
-    <div className="opsModalBack" onMouseDown={onClose}>
-      <div className="opsModal" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="opsModalTop">
-          <div className="opsModalTitle">
-            {mode === "create" ? "Nueva operación" : mode === "edit" ? "Editar operación" : "Detalle de operación"}
-          </div>
-          <button type="button" className="opsIconBtn" onClick={onClose}><TbX /></button>
-        </div>
+    <div className="opsRouteExcelBlock">
+      <div className={`opsRouteExcelTitle opsRouteExcelTitle--${color}`}>{title}</div>
 
-        <div className="opsModalBody">
-          <div className="opsGrid">
-            <div className="opsField opsField--span2">
-              <label>Título / Descripción</label>
-              <input className="opsInput" value={form.title ?? ""} readOnly={ro}
-                placeholder="Ej. Entrega sanitarios a Coppel"
-                onChange={(e) => !ro && setForm((p) => ({ ...p, title: e.target.value }))} />
-            </div>
+      <table className="opsRouteExcelTable">
+        <thead>
+          <tr>
+            <th>{subtitle}</th>
+            <th>B</th>
+            <th>L</th>
+            <th>REM</th>
+            <th>{cityLabel}</th>
+          </tr>
+        </thead>
 
-            <div className="opsField">
-              <label>Estado</label>
-              <select
-                className="opsInput"
-                value={form.status}
-                disabled={ro}
-                onChange={(e) =>
-                  !ro && setForm((p) => ({ ...p, status: e.target.value }))
-                }
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="opsRouteExcelEmpty">
+                Sin servicios activos para esta ruta.
+              </td>
+            </tr>
+          ) : (
+            rows.map((row) => (
+              <tr
+                key={row.id}
+                className={row.billing_alert === "Facturar" ? "opsRouteExcelRow--bill" : ""}
               >
-                {Object.entries(STATUSES).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <td>{row.client_name}</td>
+                <td>{row.sanitary_qty || ""}</td>
+                <td>{row.sink_qty || ""}</td>
+                <td>{row.trailer_qty || ""}</td>
+                <td>{row.location}</td>
+              </tr>
+            ))
+          )}
 
-            <div className="opsField">
-              <label>Prioridad</label>
-              <select
-                className="opsInput"
-                value={form.priority || "medium"}
-                disabled={ro}
-                onChange={(e) =>
-                  !ro && setForm((p) => ({ ...p, priority: e.target.value }))
-                }
-              >
-                {Object.entries(PRIORITIES).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <tr className="opsRouteExcelTotal">
+            <td></td>
+            <td>{totals.sanitary}</td>
+            <td>{totals.sink}</td>
+            <td>{totals.trailer}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-            {inp("Unidad", "unit_name", "text", "Ej. Unidad 84")}
-            {inp("Operador", "operator_name", "text", "Nombre del operador")}
-            {inp("Cliente", "client_name", "text", "Nombre del cliente")}
-            {inp("Origen", "origin", "text", "Punto de partida")}
-            {inp("Destino", "destination", "text", "Punto de llegada")}
-            {inp("Fecha / hora programada", "scheduled_at", "datetime-local")}
-            {inp("Salida real", "real_departure_at", "datetime-local")}
-            {inp("Llegada real", "real_arrival_at", "datetime-local")}
+function LocationMapPicker({ form, setForm, readOnly }) {
+  const [query, setQuery]       = useState(form.location || "");
+  const [results, setResults]   = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [coords, setCoords]     = useState(
+    form.latitude && form.longitude
+      ? { lat: Number(form.latitude), lng: Number(form.longitude) }
+      : null
+  );
 
-            <div className="opsField opsField--span2">
-              <label>Observaciones</label>
-              <textarea className="opsTextarea" value={form.observations ?? ""} readOnly={ro}
-                placeholder="Observaciones generales de la operación..."
-                onChange={(e) => !ro && setForm((p) => ({ ...p, observations: e.target.value }))} />
+  async function handleSearch() {
+    const text = String(query || "").trim();
+    if (!text) return;
+    setSearching(true);
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(text + ", Sinaloa, México")}`,
+        { headers: { Accept: "application/json" } }
+      );
+      setResults(await resp.json());
+    } catch {
+      Swal.fire("Error", "No se pudo buscar la ubicación.", "error");
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function pickPlace(place) {
+    const lat  = Number(place.lat);
+    const lng  = Number(place.lon);
+    const name = place.display_name?.split(",")[0] || query;
+    const city =
+      place.address?.city        ||
+      place.address?.town        ||
+      place.address?.municipality||
+      place.address?.county      || "";
+
+    setCoords({ lat, lng });
+    setResults([]);
+    setQuery(name);
+
+    setForm((prev) => ({
+      ...prev,
+      location     : prev.location || name,
+      city         : city ? String(city).toUpperCase() : prev.city,
+      latitude     : lat,
+      longitude    : lng,
+      full_address : place.display_name || "",
+    }));
+  }
+
+  const mapSrc = coords
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${coords.lng - 0.016}%2C${coords.lat - 0.016}%2C${coords.lng + 0.016}%2C${coords.lat + 0.016}&layer=mapnik&marker=${coords.lat}%2C${coords.lng}`
+    : "";
+
+  return (
+    <div className="opsLocPicker">
+      {/* Barra de búsqueda */}
+      <div className="opsLocSearchRow">
+        <div className="opsLocSearchBar">
+          <TbMapSearch className="opsLocSearchIcon" />
+          <input
+            className="opsLocInput"
+            value={query}
+            readOnly={readOnly}
+            placeholder="Escribe colonia, obra, calle o ciudad…"
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !readOnly && handleSearch()}
+          />
+        </div>
+        {!readOnly && (
+          <button
+            type="button"
+            className="opsLocSearchBtn"
+            onClick={handleSearch}
+            disabled={searching}
+          >
+            {searching ? "…" : "Buscar"}
+          </button>
+        )}
+      </div>
+
+      {/* Resultados dropdown */}
+      {results.length > 0 && (
+        <div className="opsLocResults">
+          {results.map((place) => (
+            <button
+              key={place.place_id}
+              type="button"
+              className="opsLocResult"
+              onClick={() => pickPlace(place)}
+            >
+              <TbMapPin className="opsLocResultPin" />
+              <div className="opsLocResultText">
+                <strong>{place.display_name?.split(",")[0]}</strong>
+                <span>{place.display_name}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Mini mapa */}
+      <div className="opsLocMap">
+        {mapSrc ? (
+          <>
+            <iframe
+              title="Mapa"
+              src={mapSrc}
+              className="opsLocMapFrame"
+              loading="lazy"
+            />
+            <div className="opsLocMapOverlay">
+              <TbMapPin className="opsLocMapPin" />
+              <span>{query || form.location}</span>
             </div>
+          </>
+        ) : (
+          <div className="opsLocMapEmpty">
+            <div className="opsLocMapEmptyIcon"><TbMapPin /></div>
+            <p>Busca una ubicación para mostrar el mapa</p>
           </div>
-        </div>
-
-        <div className="opsModalActions">
-          <button type="button" className="opsBtn opsBtnGhost" onClick={onClose}>Cerrar</button>
-          {!ro && <button type="button" className="opsBtn opsBtnPrimary" onClick={onSave}>Guardar operación</button>}
-        </div>
+        )}
       </div>
     </div>
   );
 }
 
+// ─── Service Form Modal ─────────────────────────────────────
+function OperationFormModal({ open, mode, form, setForm, onClose, onSave, selectedClient, setSelectedClient }) {
+  if (!open) return null;
+  const ro = mode === "view";
+
+  const updateField = (key, value) => {
+    setForm((prev) => {
+      const next = { ...prev, [key]: value };
+
+      if (key === "delivery_date" || key === "billing_period") {
+        const billing = getBillingRange(
+          key === "delivery_date" ? value : prev.delivery_date,
+          key === "billing_period" ? value : prev.billing_period
+        );
+
+        next.billing_start = billing.billing_start;
+        next.billing_end = billing.billing_end;
+        next.billing_alert = billing.billing_alert;
+      }
+
+      if (key === "sanitary_qty" || key === "sink_qty" || key === "trailer_qty" || key === "unit_price") {
+        const sanitary = Number(key === "sanitary_qty" ? value : prev.sanitary_qty || 0);
+        const sink = Number(key === "sink_qty" ? value : prev.sink_qty || 0);
+        const trailer = Number(key === "trailer_qty" ? value : prev.trailer_qty || 0);
+        const price = Number(key === "unit_price" ? value : prev.unit_price || 0);
+
+        next.total_price = Number(((sanitary + sink + trailer) * price).toFixed(2));
+      }
+
+      next.title = `${next.client_name || "Servicio"} · ${next.city || ""} · ${next.location || ""}`.trim();
+      next.destination = next.location || "";
+      next.status = next.removed ? "cancelled" : "scheduled";
+
+      return next;
+    });
+  };
+
+  const input = (label, key, type = "text", placeholder = "") => (
+    <div className="opsField">
+      <label>{label}</label>
+      <input
+        className="opsInput"
+        type={type}
+        value={form[key] ?? ""}
+        readOnly={ro}
+        placeholder={placeholder}
+        onChange={(e) => !ro && updateField(key, e.target.value)}
+      />
+    </div>
+  );
+
+  const check = (label, key) => (
+    <label className="opsDayCheck">
+      <input
+        type="checkbox"
+        checked={Boolean(form[key])}
+        disabled={ro}
+        onChange={(e) => !ro && updateField(key, e.target.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  );
+
+  return (
+    <div className="opsModalBack" onMouseDown={onClose}>
+      <div className="opsModal opsServiceModal" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="opsModalTop">
+          <div>
+            <div className="opsModalTitle">
+              {mode === "edit" ? "Editar servicio sanitario" : "Nuevo servicio sanitario"}
+            </div>
+            <div className="opsModalSub">
+              Datos base para facturación automática y generación de bitácora de ruta.
+            </div>
+          </div>
+
+          <button type="button" className="opsIconBtn" onClick={onClose}>
+            <TbX />
+          </button>
+        </div>
+
+        <div className="opsModalBody">
+<div className="opsFormSection">
+  <div className="opsFormSectionTitle">
+    <TbBuildingStore /> Cliente y ubicación
+  </div>
+
+  <div className="opsGrid">
+    <div className="opsField">
+      <label>Cliente registrado</label>
+      <ClientSelectPro
+        value={form.client_id || ""}
+        selectedClient={selectedClient}
+        onSelect={(client) => {
+          if (!client) {
+            setSelectedClient(null);
+            setForm((prev) => ({
+              ...prev,
+              client_id: "",
+              client_name: "",
+            }));
+            return;
+          }
+
+          setSelectedClient(client);
+          setForm((prev) => ({
+            ...prev,
+            client_id: client.id,
+            client_name: client.name || "",
+            origin: client.client_code || prev.origin || "",
+            city: client.billing_city || prev.city || "",
+            full_address: client.address || prev.full_address || "",
+          }));
+        }}
+        placeholder="Buscar cliente registrado..."
+      />
+    </div>
+
+    {input("# Cliente", "origin", "text", "Ej. M25 / M604 / V S/F")}
+    {input("Sucursal", "branch", "text", "MOCHIS / GUASAVE")}
+    {input("Ciudad", "city", "text", "LOS MOCHIS / GUASAVE")}
+    {input("Ubicación visible en tabla", "location", "text", "Ej. CAÑAVERAL / TOPO / AGUA FRÍA")}
+    {input("Salida de almacén", "warehouse_exit", "text", "Número o referencia")}
+    {input("Fecha de control", "control_date", "date")}
+    {input("Fecha de salida", "delivery_date", "date")}
+
+<div className="opsField opsField--span2">
+      <label>Ubicación en mapa</label>
+      <LocationMapPicker form={form} setForm={setForm} readOnly={ro} />
+    </div>
+  </div>
+</div>
+
+          <div className="opsFormSection">
+            <div className="opsFormSectionTitle">
+              <TbBath /> Cantidades y precio
+            </div>
+
+<div className="opsGrid opsGrid--four">
+  {input("B / Sanitarios total", "sanitary_qty", "number", "0")}
+  {input("Sanitarios propios", "sanitary_owned", "number", "0")}
+  {input("Sanitarios no propios", "sanitary_external", "number", "0")}
+  {input("L / Lavamanos", "sink_qty", "number", "0")}
+  {input("REM / Remolques", "trailer_qty", "number", "0")}
+  {input("Servicios", "service_frequency", "number", "1")}
+  {input("Días", "service_days", "number", "0")}
+  {input("Precio unitario", "unit_price", "number", "0.00")}
+</div>
+
+            <div className="opsCalculatedBox">
+              <TbCurrencyDollar />
+              <div>
+                <span>Total calculado</span>
+                <strong>
+                  {Number(form.total_price || 0).toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+<div className="opsFormSection">
+            <div className="opsFormSectionTitle">
+              <TbFileInvoice /> Facturación
+            </div>
+
+            <div className="opsGrid">
+              {input("Periodo", "billing_period", "number", "1")}
+
+              {/* Folio: solo lectura, generado automáticamente */}
+              <div className="opsField">
+                <label>Folio factura</label>
+                {form.invoice_number ? (
+                  <div className="opsFolioBox">
+                    <TbReceipt2 />
+                    <span>{form.invoice_number}</span>
+                    <span className="opsFolioBoxTag">Auto-generado</span>
+                  </div>
+                ) : (
+                  <div className="opsFolioBox opsFolioBox--empty">
+                    <TbReceipt2 />
+                    <span>Se asigna al generar factura</span>
+                  </div>
+                )}
+              </div>
+
+              {input("Inicio factura", "billing_start", "date")}
+              {input("Fin factura", "billing_end", "date")}
+
+              <div className="opsField">
+                <label>Alerta de cobro</label>
+                <div className={`opsBillingAlertBox ${
+                  form.invoice_id
+                    ? "opsBillingAlertBox--done"
+                    : form.billing_alert === "Facturar"
+                    ? "opsBillingAlertBox--bill"
+                    : "opsBillingAlertBox--ok"
+                }`}>
+                  {form.invoice_id
+                    ? "✓ Facturado"
+                    : form.billing_alert === "Facturar"
+                    ? "⚠ Facturar"
+                    : "------"}
+                </div>
+              </div>
+
+              <label className="opsRemovedCheck">
+                <input
+                  type="checkbox"
+                  checked={Boolean(form.removed)}
+                  disabled={ro}
+                  onChange={(e) => !ro && updateField("removed", e.target.checked)}
+                />
+                <span>Retirado</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="opsFormSection">
+            <div className="opsFormSectionTitle">
+              <TbClipboardList /> Días de servicio
+            </div>
+
+            <div className="opsDaysGrid">
+              {check("LUN", "monday")}
+              {check("MAR", "tuesday")}
+              {check("MIE", "wednesday")}
+              {check("JUE", "thursday")}
+              {check("VIE", "friday")}
+              {check("SAB", "saturday")}
+              {check("DOM", "sunday")}
+            </div>
+          </div>
+
+          <div className="opsFormSection">
+            <div className="opsFormSectionTitle">
+              Observaciones
+            </div>
+
+            <textarea
+              className="opsTextarea"
+              value={form.observations ?? ""}
+              readOnly={ro}
+              placeholder="Notas, pendientes, referencias o comentarios del servicio..."
+              onChange={(e) => !ro && updateField("observations", e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="opsModalActions">
+          <button type="button" className="opsBtn opsBtnGhost" onClick={onClose}>
+            Cerrar
+          </button>
+
+          {!ro && (
+            <button type="button" className="opsBtn opsBtnPrimary" onClick={onSave}>
+              Guardar servicio
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 // ─── Detail Drawer ────────────────────────────────────────────
 function OperationDetailDrawer({ open, operation, onClose, currentWorker, onRefresh }) {
   const [events, setEvents] = useState([]);
@@ -429,51 +896,107 @@ function OperationDetailDrawer({ open, operation, onClose, currentWorker, onRefr
 export default function OperationsModule({ currentWorker }) {
   const worker = currentWorker || null;
 
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [q, setQ] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  // ── Pestaña principal del módulo ──────────────────────────────────────────
+  const [moduleTab, setModuleTab] = useState("services"); // services | operations | log
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("create");
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(emptyOperation(worker));
+const [rows, setRows] = useState([]);
+const [loading, setLoading] = useState(false);
+const [q, setQ] = useState("");
+const [dateFrom, setDateFrom] = useState("");
+const [dateTo, setDateTo] = useState("");
+
+const routeFilteredRows = useMemo(() => {
+  return rows.filter((row) => {
+    if (row.removed) return false;
+
+    const search = q.trim().toLowerCase();
+    if (search) {
+      const haystack = [
+        row.client_name,
+        row.city,
+        row.location,
+        row.destination,
+        row.origin,
+      ].join(" ").toLowerCase();
+
+      if (!haystack.includes(search)) return false;
+    }
+
+    if (row.delivery_date) {
+      if (dateFrom && row.delivery_date < dateFrom) return false;
+      if (dateTo && row.delivery_date > dateTo) return false;
+    }
+
+    return true;
+  });
+}, [rows, q, dateFrom, dateTo]);
+
+const [modalOpen, setModalOpen] = useState(false);
+const [modalMode, setModalMode] = useState("create");
+const [editingId, setEditingId] = useState(null);
+const [form, setForm] = useState(emptyOperation(worker));
+const [selectedClient, setSelectedClient] = useState(null);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedOp, setSelectedOp] = useState(null);
 
-  const loadRows = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (q.trim()) params.set("q", q.trim());
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      const resp = await apiFetch(`/api/operations?${params.toString()}`);
-      setRows(resp?.data || []);
-    } catch (e) {
-      Swal.fire("Error", e.message || "No se pudieron cargar las operaciones", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [q, statusFilter]);
+const loadRows = useCallback(async () => {
+  setLoading(true);
+  try {
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q.trim());
+
+    const resp = await apiFetch(`/api/operations?${params.toString()}`);
+    setRows(resp?.data || []);
+  } catch (e) {
+    Swal.fire("Error", e.message || "No se pudieron cargar los servicios", "error");
+  } finally {
+    setLoading(false);
+  }
+}, [q]);
 
   useEffect(() => { loadRows(); }, [loadRows]);
 
-  function openCreate() {
-    setModalMode("create"); setEditingId(null);
-    setForm(emptyOperation(worker)); setModalOpen(true);
-  }
-  function openEdit(row) {
-    setModalMode("edit"); setEditingId(row.id);
-    setForm({ ...emptyOperation(worker), ...row,
-      scheduled_at: toInputDT(row.scheduled_at),
-      real_departure_at: toInputDT(row.real_departure_at),
-      real_arrival_at: toInputDT(row.real_arrival_at),
-    });
-    setModalOpen(true);
-  }
-  function openDetail(row) { setSelectedOp(row); setDrawerOpen(true); }
-  function closeModal() { setModalOpen(false); setEditingId(null); setForm(emptyOperation(worker)); }
+function openCreate() {
+  setModalMode("create");
+  setEditingId(null);
+  setSelectedClient(null);
+  setForm(emptyOperation(worker));
+  setModalOpen(true);
+}
+
+function openEdit(row) {
+  setModalMode("edit");
+  setEditingId(row.id);
+  setSelectedClient(
+    row?.client_id
+      ? {
+          id: row.client_id,
+          name: row.client_name || "",
+        }
+      : null
+  );
+  setForm({
+    ...emptyOperation(worker),
+    ...row,
+    client_id: row.client_id || "",
+    latitude: row.latitude ?? "",
+    longitude: row.longitude ?? "",
+    scheduled_at: toInputDT(row.scheduled_at),
+    real_departure_at: toInputDT(row.real_departure_at),
+    real_arrival_at: toInputDT(row.real_arrival_at),
+  });
+  setModalOpen(true);
+}
+
+function openDetail(row) { setSelectedOp(row); setDrawerOpen(true); }
+
+function closeModal() {
+  setModalOpen(false);
+  setEditingId(null);
+  setSelectedClient(null);
+  setForm(emptyOperation(worker));
+}
 
   async function saveRow() {
     if (!String(form.title || "").trim()) {
@@ -493,7 +1016,48 @@ export default function OperationsModule({ currentWorker }) {
     }
   }
 
-  async function deleteRow(row) {
+async function generateInvoiceFromService(row) {
+  if (!row?.id) return;
+
+  if (!row.client_id && !row.client_name) {
+    Swal.fire("Falta cliente", "El servicio necesita un cliente para generar factura.", "warning");
+    return;
+  }
+
+  const result = await Swal.fire({
+    title: "¿Generar factura?",
+    text: `Se creará una factura para ${row.client_name || "este servicio"}.`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Sí, generar",
+    cancelButtonText: "Cancelar",
+    reverseButtons: true,
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    const resp = await apiFetch(`/api/operations/${row.id}/invoice`, {
+      method: "POST",
+      body: JSON.stringify({
+        created_by: worker?.id || null,
+        status: "draft",
+      }),
+    });
+
+    await loadRows();
+
+    Swal.fire(
+      "Factura generada",
+      `Se creó la factura ${resp?.data?.invoice?.folio || resp?.data?.invoice_folio || ""}.`,
+      "success"
+    );
+  } catch (e) {
+    Swal.fire("Error", e.message || "No se pudo generar la factura", "error");
+  }
+}
+
+async function deleteRow(row) {
     const result = await Swal.fire({
       title: "¿Eliminar operación?",
       text: `Se eliminará "${row.title || "la operación seleccionada"}".`,
@@ -516,122 +1080,325 @@ export default function OperationsModule({ currentWorker }) {
     incidents:  rows.filter((r) => r.status === "incident").length,
   }), [rows]);
 
-  return (
+return (
     <div className="opsWrap">
-      <div className="opsTopbar">
-        <div>
-          <h1 className="opsTitle"><TbTruck /> Operaciones</h1>
-          <p className="opsSub">Gestión operativa de unidades, operadores, rutas e incidencias en campo</p>
-        </div>
-        <div className="opsTopActions">
-          <button type="button" className="opsBtn opsBtnGhost" onClick={loadRows}><TbRefresh /> Recargar</button>
-          <button type="button" className="opsBtn opsBtnPrimary" onClick={openCreate}><TbPlus /> Nueva operación</button>
-        </div>
+
+      {/* ── Encabezado del módulo ───────────────────────────────────────────── */}
+<div className="opsModuleHeader">
+  <div>
+    <h1 className="opsTitle">
+      <TbTruck />
+      Servicios Sanitarios
+    </h1>
+
+    <p className="opsSub">
+      Control de rentas · Facturación · Bitácora automática de ruta
+    </p>
+  </div>
+
+  <div className="opsTopMiniTabs">
+
+    <button
+      type="button"
+      className={`opsTopMiniTab ${moduleTab === "services" ? "active" : ""}`}
+      onClick={() => setModuleTab("services")}
+    >
+      <TbBath />
+      Servicios
+    </button>
+
+    <button
+      type="button"
+      className={`opsTopMiniTab ${moduleTab === "log" ? "active" : ""}`}
+      onClick={() => setModuleTab("log")}
+    >
+      <TbClipboardList />
+      Bitácora
+    </button>
+
+  </div>
+</div>
+
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* PESTAÑA 1 — Servicios Sanitarios (CONTROL DE SERVICIOS format)        */}
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+{moduleTab === "services" && (
+  <div className="opsInnerWrap">
+    <div className="opsTopbar">
+      <div>
+        <h2 className="opsTitle" style={{ fontSize: 18 }}>
+          <TbBath /> Control de Servicios Sanitarios
+        </h2>
+        <p className="opsSub">
+          Captura base tipo Excel: cliente, ubicación, cantidades, precio, facturación y días de ruta.
+        </p>
       </div>
 
-      <div className="opsKpis">
-        <div className="opsKpiCard"><div className="opsKpiLabel">Total</div><div className="opsKpiValue">{kpis.total}</div></div>
-        <div className="opsKpiCard"><div className="opsKpiLabel">Programados</div><div className="opsKpiValue">{kpis.programmed}</div></div>
-        <div className="opsKpiCard opsKpiCard--active"><div className="opsKpiLabel">En curso</div><div className="opsKpiValue">{kpis.active}</div></div>
-        <div className="opsKpiCard opsKpiCard--ok"><div className="opsKpiLabel">Finalizados</div><div className="opsKpiValue">{kpis.completed}</div></div>
-        <div className="opsKpiCard opsKpiCard--warn"><div className="opsKpiLabel">Incidencias</div><div className="opsKpiValue">{kpis.incidents}</div></div>
-      </div>
+      <div className="opsTopActions">
+        <button type="button" className="opsBtn opsBtnGhost" onClick={loadRows}>
+          <TbRefresh /> Recargar
+        </button>
 
-      <div className="opsStatusTabs">
-        {STATUS_FLOW.map((s) => (
-          <button key={s} type="button"
-            className={`opsStatusTab${statusFilter === s ? " active" : ""}`}
-            style={statusFilter === s && s !== "all" ? { borderColor: STATUSES[s]?.color, color: STATUSES[s]?.color, background: STATUSES[s]?.bg } : {}}
-            onClick={() => setStatusFilter(s)}>
-            {s === "all" ? "Todos" : STATUSES[s]?.label}
-          </button>
-        ))}
+        <button type="button" className="opsBtn opsBtnPrimary" onClick={openCreate}>
+          <TbPlus /> Nuevo servicio
+        </button>
       </div>
+    </div>
 
-      <div className="opsFilters">
-        <div className="opsSearch">
-          <TbSearch />
-          <input value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por título, cliente, unidad, operador..." />
-        </div>
-      </div>
+    <div className="opsCard">
+      <div className="opsTableWrap">
+        <table className="opsTable opsServicesExcelTable">
+          <thead>
+            <tr>
+<th>Control</th>
+<th># Cliente</th>
+<th>Cliente</th>
+<th>Sucursal</th>
+<th>Ciudad</th>
+<th>Salida almacén</th>
+<th>Precio</th>
+<th>Ubicación</th>
+<th>Fecha salida</th>
+<th>Retirado</th>
+<th>B</th>
+<th>Propios</th>
+<th>No propios</th>
+<th>L</th>
+<th>REM</th>
+<th>Servicios</th>
+<th>Periodo</th>
+<th>Días</th>
+<th>Inicio</th>
+<th>Final</th>
+<th>Alerta</th>
+<th>Factura</th>
+<th>LUN</th>
+<th>MAR</th>
+<th>MIE</th>
+<th>JUE</th>
+<th>VIE</th>
+<th>SAB</th>
+<th>Status</th>
+<th className="opsThRight">Acciones</th>
+            </tr>
+          </thead>
 
-      <div className="opsCard">
-        <div className="opsTableWrap">
-          <table className="opsTable">
-            <thead>
+          <tbody>
+            {loading ? (
               <tr>
-                <th>Operación</th>
-                <th>Estado</th>
-                <th>Prioridad</th>
-                <th>Unidad / Operador</th>
-                <th>Cliente</th>
-                <th>Ruta</th>
-                <th>Programado</th>
-                <th className="opsThRight">Acciones</th>
+                <td colSpan={30} className="opsEmpty">Cargando servicios...</td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={8} className="opsEmpty">Cargando operaciones...</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={8} className="opsEmpty">No hay operaciones registradas.</td></tr>
-              ) : rows.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <div className="opsPrimaryCell">
-                      <div className="opsPrimaryIcon"><TbTruck /></div>
-                      <div>
-                        <div className="opsPrimaryTitle">{row.title || "Sin título"}</div>
-                        <div className="opsPrimarySub">{formatDate(row.created_at)}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td><StatusBadge status={row.status} /></td>
-                  <td><PriorityBadge priority={row.priority} /></td>
-                  <td>
-                    <div className="opsMetaStack">
-                      {row.unit_name && <span><TbTruck /> {row.unit_name}</span>}
-                      {row.operator_name && <span><TbUser /> {row.operator_name}</span>}
-                      {!row.unit_name && !row.operator_name && (
-                        <span style={{ color: "#94a3b8" }}>—</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>{row.client_name || "—"}</td>
-                  <td>
-                    {(row.origin || row.destination) ? (
-                      <div className="opsRoute">
-                        <span>{row.origin || "—"}</span>
-                        <TbArrowRight className="opsRouteArrow" />
-                        <span>{row.destination || "—"}</span>
-                      </div>
-                    ) : "—"}
-                  </td>
-                  <td>{formatDate(row.scheduled_at)}</td>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={30} className="opsEmpty">No hay servicios registrados.</td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id} className={row.billing_alert === "Facturar" ? "opsServiceRow--bill" : ""}>
+<td>{row.control_date || "—"}</td>
+<td>{row.origin || "—"}</td>
+<td>{row.client_name || "—"}</td>
+<td>{row.branch || "MOCHIS"}</td>
+<td>{row.city || "—"}</td>
+<td>{row.warehouse_exit || "—"}</td>
+<td>{Number(row.unit_price || 0).toLocaleString("es-MX", { style: "currency", currency: "MXN" })}</td>
+<td>
+  <button
+    type="button"
+    className="opsLocationCell"
+    onClick={() => {
+      const url =
+        row.google_maps_url ||
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          row.full_address || row.location || row.city || ""
+        )}`;
+
+      window.open(url, "_blank", "noopener,noreferrer");
+    }}
+  >
+    <TbMapPin />
+    {row.city || "—"}
+  </button>
+</td>
+<td>{row.delivery_date || "—"}</td>
+<td>{row.removed ? "Sí" : ""}</td>
+<td>{row.sanitary_qty || 0}</td>
+<td>{row.sanitary_owned || 0}</td>
+<td>{row.sanitary_external || 0}</td>
+<td>{row.sink_qty || 0}</td>
+<td>{row.trailer_qty || 0}</td>
+<td>{row.service_frequency || 1}</td>
+<td>{row.billing_period || 1}</td>
+<td>{row.service_days || 0}</td>
+<td>{row.billing_start || "—"}</td>
+<td>{row.billing_end || "—"}</td>
+<td>
+  {row.invoice_id ? (
+    /* Ya facturado: badge verde con el folio */
+    <div className="opsBillingCell opsBillingCell--done">
+      <TbReceipt2 />
+      <span>{row.invoice_number || "Facturado"}</span>
+    </div>
+  ) : row.billing_alert === "Facturar" ? (
+    /* Pendiente de facturar: badge rojo + botón */
+    <button
+      type="button"
+      className="opsBillingCell opsBillingCell--bill"
+      onClick={() => generateInvoiceFromService(row)}
+      title="Clic para generar factura"
+    >
+      <TbReceipt2 />
+      <span>Facturar</span>
+    </button>
+  ) : (
+    /* Sin alerta */
+    <span className="opsMuted">------</span>
+  )}
+</td>
+<td className="opsMuted" style={{ fontSize: 11 }}>
+  {row.invoice_number || "—"}
+</td>
                   <td className="opsTdRight">
-                    <div className="opsActions">
-                      <button type="button" className="opsIconBtn" onClick={() => openDetail(row)} title="Ver detalle"><TbEye /></button>
-                      <button type="button" className="opsIconBtn" onClick={() => openEdit(row)} title="Editar"><TbEdit /></button>
-                      <button type="button" className="opsIconBtn opsIconBtnDanger" onClick={() => deleteRow(row)} title="Eliminar"><TbTrash /></button>
-                    </div>
+<div className="opsActions">
+  <button type="button" className="opsIconBtn" onClick={() => openEdit(row)} title="Editar">
+    <TbEdit />
+  </button>
+
+  <button type="button" className="opsIconBtn opsIconBtnDanger" onClick={() => deleteRow(row)} title="Eliminar">
+    <TbTrash />
+  </button>
+</div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+<OperationFormModal
+  open={modalOpen}
+  mode={modalMode}
+  form={form}
+  setForm={setForm}
+  onClose={closeModal}
+  onSave={saveRow}
+  selectedClient={selectedClient}
+  setSelectedClient={setSelectedClient}
+/>
+  </div>
+)}
+
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* PESTAÑA 2 — Bitácora de Ruta (RUTA 2026 format)                       */}
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+{moduleTab === "log" && (
+  <div className="opsInnerWrap">
+    <div className="opsRouteHeader">
+      <div>
+        <h2 className="opsTitle opsRouteTitle">
+          <TbClipboardList />
+          Bitácora de Ruta
+        </h2>
+
+        <p className="opsSub">
+          Se genera automáticamente desde Servicios Sanitarios según ciudad, ubicación, cantidades y días de servicio.
+        </p>
       </div>
 
-      <OperationFormModal
-        open={modalOpen} mode={modalMode} form={form} setForm={setForm}
-        onClose={closeModal} onSave={saveRow}
+      <button
+        type="button"
+        className="opsBtn opsBtnGhost"
+        onClick={loadRows}
+      >
+        <TbRefresh />
+        Actualizar
+      </button>
+    </div>
+
+    <div className="opsRouteFilters">
+      <div className="opsSearch">
+        <TbSearch />
+
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Filtrar por cliente, ubicación, ciudad..."
+        />
+      </div>
+
+      <div className="opsDateFilters">
+        <input
+          type="date"
+          className="opsDateInput"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+        />
+
+        <input
+          type="date"
+          className="opsDateInput"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+        />
+      </div>
+
+      <button
+        type="button"
+        className="opsRouteClearBtn"
+        onClick={() => {
+          setQ("");
+          setDateFrom("");
+          setDateTo("");
+        }}
+      >
+        Limpiar
+      </button>
+
+      <div className="opsRouteFilterPill">
+        <TbFilter />
+        <span>{routeFilteredRows.length} servicios activos</span>
+      </div>
+    </div>
+
+    <div className="opsRouteBoard">
+      <RouteExcelBlock
+        title="Ruta Mochis"
+        subtitle="Lunes · Miércoles · Viernes"
+        cityLabel="Ubicación"
+        color="dark"
+        rows={buildRouteRows(routeFilteredRows, "LOS MOCHIS", "LMV")}
       />
-      <OperationDetailDrawer
-        open={drawerOpen} operation={selectedOp}
-        onClose={() => setDrawerOpen(false)}
-        currentWorker={worker} onRefresh={loadRows}
+
+      <RouteExcelBlock
+        title="Ruta Mochis"
+        subtitle="Martes · Jueves · Sábado"
+        cityLabel="Ubicación"
+        color="dark"
+        rows={buildRouteRows(routeFilteredRows, "LOS MOCHIS", "MJS")}
       />
+
+      <RouteExcelBlock
+        title="Ruta Guasave"
+        subtitle="Lunes · Miércoles · Viernes"
+        cityLabel="Ubicación"
+        color="green"
+        rows={buildRouteRows(routeFilteredRows, "GUASAVE", "LMV")}
+      />
+
+      <RouteExcelBlock
+        title="Ruta Guasave"
+        subtitle="Martes · Jueves · Sábado"
+        cityLabel="Ubicación"
+        color="green"
+        rows={buildRouteRows(routeFilteredRows, "GUASAVE", "MJS")}
+      />
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }

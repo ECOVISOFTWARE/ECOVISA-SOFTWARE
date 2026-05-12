@@ -3,7 +3,6 @@ const { supabaseAdmin } = require("../supabaseAdmin");
 /**
  * Sincroniza las reservas de una cotización.
  * Lee los quote_items que tienen product_id y actualiza quote_reservations.
- * Llama esto después de crear o editar items de una cotización.
  */
 async function syncReservations(quoteId) {
   if (!quoteId) return;
@@ -59,7 +58,6 @@ async function releaseReservations(quoteId) {
 
 /**
  * Convierte los items de una cotización en un movimiento de SALIDA real del inventario.
- * Llama esto cuando la cotización se aprueba o se factura.
  */
 async function deductInventoryFromQuote(quoteId, actorId, folio) {
   if (!quoteId) return;

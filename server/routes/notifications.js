@@ -31,7 +31,7 @@ function pushToWorker(workerId, payload) {
   }
 }
 
-// ✅ GET /stream — el frontend se conecta aquí para recibir notifs en tiempo real
+// GET /stream — el frontend se conecta aquí para recibir notifs en tiempo real
 router.get("/stream", (req, res) => {
   const { recipient_id } = req.query;
   if (!recipient_id) return res.status(400).json({ error: "recipient_id required" });

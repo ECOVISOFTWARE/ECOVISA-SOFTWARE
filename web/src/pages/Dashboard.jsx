@@ -144,10 +144,10 @@ export default function Dashboard({ worker, onLogout }) {
         size: "span2",
         icon: <TbBox />
       },
-      {
+{
         key: "operations",
-        title: "Operaciones",
-        desc: "Unidades · Rutas · Estados · Incidencias",
+        title: "Servicios y Operaciones",
+        desc: "Contratos · Ruta semanal · Incidencias",
         tone: "steel",
         size: "span2",
         icon: <TbTruck />

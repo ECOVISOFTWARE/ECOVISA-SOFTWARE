@@ -98,7 +98,7 @@ router.get('/public/:token/export/pdf', async (req, res) => {
    QUOTES LIST & CRUD
 ════════════════════════════════════════════════════════ */
 
-// ✅ GET con filtro de base
+// GET con filtro de base
 router.get('/', branchFilter, async (req, res) => {
   try {
     const { status, q } = req.query;
@@ -112,7 +112,7 @@ router.get('/', branchFilter, async (req, res) => {
       `)
       .order('created_at', { ascending: false });
 
-    // ✅ Dirección ve todo; otros solo su base
+    // Dirección ve todo; otros solo su base
     if (req.branchId) query = query.eq('branch_id', req.branchId);
 
     if (status && status !== 'all') query = query.eq('status', status);
@@ -157,7 +157,7 @@ router.get('/:id', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ✅ POST con branch_id
+// POST con branch_id
 router.post('/', branchFilter, async (req, res) => {
   try {
     const { worker_id, items = [], ...payload } = req.body;
@@ -173,7 +173,7 @@ router.post('/', branchFilter, async (req, res) => {
         client_snapshot: clientSnapshot,
         created_by: worker_id,
         status: 'pending',
-        // ✅ hereda base del worker
+        // hereda base del worker
         branch_id: req.branchId || null,
       })
       .select().single();
@@ -225,7 +225,7 @@ router.delete('/:id', async (req, res) => {
 
 /* ── Status transitions ──────────────────────────────── */
 
-// ✅ pending → approved con notificación al creador
+// pending → approved con notificación al creador
 router.post('/:id/approve', async (req, res) => {
   try {
     const { worker_id } = req.body;
@@ -242,7 +242,7 @@ router.post('/:id/approve', async (req, res) => {
     if (error) throw error;
     broadcast();
 
-// ✅ Notificar al creador de la cotización
+// Notificar al creador de la cotización
     if (prev?.created_by && prev.created_by !== worker_id) {
       const { data: actor } = await supabase
         .from('workers').select('id, full_name, profile_photo_url').eq('id', worker_id).maybeSingle();
@@ -260,7 +260,7 @@ router.post('/:id/approve', async (req, res) => {
       }]);
     }
 
-    // ✅ Descontar inventario y registrar salida
+    // Descontar inventario y registrar salida
     await deductInventoryFromQuote(req.params.id, worker_id, prev?.folio).catch((e) =>
       console.warn("deductInventory approve error:", e?.message)
     );
@@ -269,7 +269,7 @@ router.post('/:id/approve', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 }); 
 
-// ✅ pending/approved → rejected con notificación al creador
+// pending/approved → rejected con notificación al creador
 router.post('/:id/reject', async (req, res) => {
   try {
     const { worker_id, reason } = req.body;
@@ -288,7 +288,7 @@ router.post('/:id/reject', async (req, res) => {
     if (error) throw error;
     broadcast();
 
-// ✅ Notificar al creador
+// Notificar al creador
     if (prev?.created_by && prev.created_by !== worker_id) {
       const { data: actor } = await supabase
         .from('workers').select('id, full_name, profile_photo_url').eq('id', worker_id).maybeSingle();
@@ -306,7 +306,7 @@ router.post('/:id/reject', async (req, res) => {
       }]);
     }
 
-    // ✅ Liberar reservas de inventario
+    // Liberar reservas de inventario
     await releaseReservations(req.params.id).catch((e) =>
       console.warn("releaseReservations reject error:", e?.message)
     );
@@ -339,7 +339,7 @@ router.post('/:id/pay', async (req, res) => {
       .eq('id', req.params.id).select().single();
     if (qe) throw qe;
 
-    // ✅ Usa el helper centralizado: crea movimiento OUT + libera reservas
+    // Usa el helper centralizado: crea movimiento OUT + libera reservas
     await deductInventoryFromQuote(req.params.id, worker_id, quote?.folio).catch((e) =>
       console.warn("deductInventory pay error:", e?.message)
     );
@@ -360,7 +360,7 @@ router.post('/:id/cancel', async (req, res) => {
       .eq('id', req.params.id).select().single();
     if (error) throw error;
 
-    // ✅ Liberar reservas al cancelar
+    // Liberar reservas al cancelar
     await releaseReservations(req.params.id).catch((e) =>
       console.warn("releaseReservations cancel error:", e?.message)
     );

@@ -9,7 +9,7 @@
   padding: 0;
   overflow: hidden;
 
-  /* ✅ fondo más oscuro para contraste fuerte */
+  
   background:
     radial-gradient(900px 520px at 20% 20%, rgba(33, 150, 243, 0.18), transparent 60%),
     radial-gradient(900px 520px at 85% 80%, rgba(34, 197, 94, 0.16), transparent 60%),
@@ -43,12 +43,12 @@
 
 .login-card {
   width: min(980px, calc(100% - 48px));
-  background: rgba(255, 255, 255, 0.96); /* ✅ más sólida */
+  background: rgba(255, 255, 255, 0.96); 
   border-radius: 18px;
 
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow:
-    0 40px 120px rgba(0, 0, 0, 0.45),   /* ✅ separación clara */
+    0 40px 120px rgba(0, 0, 0, 0.45),   
     0 10px 30px rgba(0, 0, 0, 0.22);
 
   display: grid;
@@ -72,12 +72,12 @@
 .brand-center {
   width: 100%;
   display: grid;
-  place-items: center;         /* ✅ centrado */
+  place-items: center;         
   margin-bottom: 6px;
 }
 
 .brand-logo {
-  height: 54px;                /* ✅ más grande */
+  height: 54px;                
   width: auto;
   max-width: 90%;
   object-fit: contain;
@@ -92,7 +92,7 @@
   place-items: center;
   margin-top: 14px;
 
-  /* ✅ sin contenedor */
+  
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -104,7 +104,7 @@
   width: min(260px, 100%);
   height: auto;
 
-  /* ✅ sin “tarjeta” */
+ 
   border-radius: 0;
   background: transparent;
 
@@ -112,34 +112,34 @@
   pointer-events: none;
   display: block;
 
-  /* ✅ sombra directa al GIF (separación sin contenedor) */
+  
   filter: drop-shadow(0 18px 40px rgba(0,0,0,0.16));
 }
 .login-note {
   margin: 0;
   margin-top: 8px;
-  text-align: center;            /* ✅ centrado */
-  opacity: 0.85;                 /* ✅ más visible */
-  font-size: 13.5px;             /* ✅ un poco más grande */
-  line-height: 1.6;              /* ✅ separación pro */
+  text-align: center;            
+  opacity: 0.85;                 
+  font-size: 13.5px;             
+  line-height: 1.6;              
   color: rgba(17, 24, 39, 0.75);
 }
 
 .login-note span {
-  display: block;                /* ✅ cada uno en su renglón */
+  display: block;                
 }
 
 .login-right {
-  padding: 34px 56px 40px;   /* ✅ sube el header (menos padding arriba) */
+  padding: 34px 56px 40px;   
   display: grid;
-  align-content: start;      /* ✅ alinea arriba como el logo */
+  align-content: start;      
   gap: 10px;
 }
 
 .login-title {
   margin: 0;
   margin-top: 6px;
-  font-size: 30px;          /* ✅ más grande */
+  font-size: 30px;          
   font-weight: 950;
   color: #0f172a;
   text-align: center;
@@ -149,10 +149,10 @@
 .login-hint {
   margin: 0;
   margin-top: 2px;
-  margin-bottom: 18px;      /* ✅ separa header de los campos */
+  margin-bottom: 18px;      
   text-align: center;
   opacity: 0.72;
-  font-size: 14.5px;        /* ✅ más visible */
+  font-size: 14.5px;        
   color: rgba(15, 23, 42, 0.78);
 }
 
@@ -163,26 +163,26 @@
 .field {
   display: grid;
   gap: 10px;
-  margin-top: 30px;   /* ✅ más separación entre campos */
+  margin-top: 30px;   
 }
 
 .label {
-  font-size: 13px;             /* ✅ más grande */
+  font-size: 13px;             
   font-weight: 900;
-  color: rgba(15, 23, 42, 0.82); /* ✅ más visible */
+  color: rgba(15, 23, 42, 0.82); 
 }
 
 .input {
   height: 46px;
-  width: 100%;                 /* ✅ fuerza mismo ancho */
-  box-sizing: border-box;      /* ✅ evita que “se salga” por padding/border */
+  width: 100%;                 
+  box-sizing: border-box;     
   padding: 0 16px;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: rgba(15, 23, 42, 0.03);
   outline: none;
   transition: 140ms ease;
-  font-size: 15px;             /* ✅ más grande */
+  font-size: 15px;             
   color: #0f172a;
 }
 
@@ -195,17 +195,17 @@
 .input-wrap {
   position: relative;
   width: 100%;
-  display: grid;               /* ✅ evita estiramientos raros */
+  display: grid;               
 }
 
 .input-wrap .input {
   width: 100%;
-  min-width: 0;                /* ✅ evita overflow en grid */
+  min-width: 0;                
 }
 .input-password {
-  padding-right: 56px; /* ✅ ojo adentro sin romper ancho */
+  padding-right: 56px; 
 }
-/* 5) Ojo sin contenedor (solo ícono) */
+
 .eye-btn {
   position: absolute;
   right: 14px;
@@ -221,7 +221,7 @@
   align-items: center;
   justify-content: center;
 
-  /* ✅ clic fácil pero sin “contenedor visible” */
+  
   width: 34px;
   height: 34px;
 }
@@ -230,14 +230,14 @@
 }
 
 .btn {
-  height: 52px;           /* ✅ un poquito más alto */
+  height: 52px;           
   width: 100%;
   border-radius: 999px;
   border: none;
   cursor: pointer;
   font-weight: 900;
   letter-spacing: 0.9px;
-  margin-top: 80px;       /* ✅ baja el botón */
+  margin-top: 80px;      
   transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
   display: inline-flex;
   align-items: center;

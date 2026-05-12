@@ -53,7 +53,7 @@ const ROUTES = useMemo(() => ({
   calendar: "/calendar"
 }), []);
 
-// ✅ Deducir el tab activo desde la URL (fix F5 / refresh)
+
 const getKeyFromPath = useCallback((pathname) => {
   // orden: rutas más largas primero por seguridad
   const entries = Object.entries(ROUTES).sort((a, b) => b[1].length - a[1].length);
@@ -68,7 +68,7 @@ const getKeyFromPath = useCallback((pathname) => {
   return "home";
 }, [ROUTES]);
 
-// ✅ Activo 100% estable: SOLO desde la URL (no depende de mediciones ni props)
+
 const activeKey = useMemo(() => {
   return getKeyFromPath(location.pathname);
 }, [location.pathname, getKeyFromPath]);
@@ -117,7 +117,6 @@ const closeNotif = () => {
 const pillRef = useRef(null);
 const btnRefs = useRef({}); // key -> button element
 const [activePill, setActivePill] = useState({ x: 0, y: 0, w: 44, h: 44, ready: false });
-// ✅ refs estables (evita refs "fantasma" en re-mount / refresh)
 const setBtnRef = useCallback(
   (key) => (el) => {
     if (el) btnRefs.current[key] = el;
@@ -149,8 +148,8 @@ const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   );
 const handleGo = (key) => {
   const path = ROUTES[key] || "/";
-  if (location.pathname !== path) navigate(path); // ✅ Navbar navega SIEMPRE
-  onChange?.(key); // opcional (por si quieres guardar en localStorage en el padre)
+  if (location.pathname !== path) navigate(path); 
+  onChange?.(key); 
   setMobileOpen(false);
 };
 useLayoutEffect(() => {
@@ -192,10 +191,10 @@ useLayoutEffect(() => {
     c.scrollTo({ left: Math.max(0, target), behavior });
   };
 
-  // ✅ 1) primer cálculo
+  // 1) primer cálculo
   update();
 
-  // ✅ 2) estabiliza tras 2 frames (cuando icon fonts / layout terminan)
+  // 2) estabiliza tras 2 frames (cuando icon fonts / layout terminan)
   raf1 = requestAnimationFrame(() => {
     update();
     center("auto"); // sin anim al cargar/refresh
@@ -204,7 +203,7 @@ useLayoutEffect(() => {
     });
   });
 
-  // ✅ ResizeObserver: si cambia el tamaño del nav o del botón, recalcula
+  // ResizeObserver: si cambia el tamaño del nav o del botón, recalcula
 let ro;
 if (typeof ResizeObserver !== "undefined") {
   ro = new ResizeObserver(() => update());
@@ -212,14 +211,14 @@ if (typeof ResizeObserver !== "undefined") {
   ro.observe(btn);
 }
 
-  // ✅ cuando termina el load (imágenes/fonts/etc), recalcula
+  // cuando termina el load (imágenes/fonts/etc), recalcula
   const onLoad = () => {
     update();
     center("auto");
   };
   window.addEventListener("load", onLoad);
 
-  // ✅ cuando las fonts están listas (iconos), recalcula
+  // cuando las fonts están listas (iconos), recalcula
   let cancelled = false;
   if (document.fonts?.ready) {
     document.fonts.ready.then(() => {
@@ -254,7 +253,7 @@ useEffect(() => {
   document.addEventListener("mousedown", onDown);
   return () => document.removeEventListener("mousedown", onDown);
 }, [profileOpen, notifOpen]);
-// ✅ Cerrar drawer con ESC (mobile/desktop)
+// Cerrar drawer con ESC (mobile/desktop)
 useEffect(() => {
   const onKey = (e) => {
     if (e.key === "Escape") setMobileOpen(false);
@@ -262,7 +261,7 @@ useEffect(() => {
   document.addEventListener("keydown", onKey);
   return () => document.removeEventListener("keydown", onKey);
 }, []);
-  // ✅ Asegura depto/puesto aunque el worker venga incompleto desde login/localStorage
+
   useEffect(() => {
     const run = async () => {
       if (!worker?.id) return;
@@ -275,11 +274,10 @@ if (w) {
     level_name: w.level_name || ""
   });
 
-  // opcional: sincroniza para que el resto de la UI lo vea
   worker.department_name = w.department_name || worker.department_name || "";
   worker.level_name = w.level_name || worker.level_name || "";
 
-  // ✅ SI el backend trae la foto, la metemos a estado local (y al worker por compatibilidad)
+
   const photo = w.profile_photo_url || "";
   if (photo) {
     setAvatarUrl(photo);
@@ -313,7 +311,7 @@ useEffect(() => {
 useEffect(() => {
   const c = navCenterRef.current;
   if (!c) return;
-  // ✅ al montar / refresh, fuerza scrollLeft estable
+
   c.scrollLeft = 0;
 }, []);
   // --- Helpers (Title Case)
@@ -408,7 +406,7 @@ useEffect(() => {
     }
   }, [worker?.id]);
 
-// ✅ Cargar al montar + SSE tiempo real (con fallback a polling si SSE falla)
+
   useEffect(() => {
     if (!worker?.id) return;
 
@@ -649,8 +647,8 @@ async function handleSaveCroppedPhoto() {
     });
 
 if (data?.profile_photo_url) {
-  setAvatarUrl(data.profile_photo_url);              // ✅ re-render seguro
-  worker.profile_photo_url = data.profile_photo_url; // opcional
+  setAvatarUrl(data.profile_photo_url);             
+  worker.profile_photo_url = data.profile_photo_url; 
 }
 
     if (rawImageUrl) URL.revokeObjectURL(rawImageUrl);
@@ -702,7 +700,7 @@ if (data?.profile_photo_url) {
 
         {/* CENTER */}
 <nav className="nav-center" aria-label="Módulos" ref={navCenterRef}>
-  {/* ✅ pill animado (circulo) */}
+ 
   <span
     ref={pillRef}
     className={`nav-activePill ${activePill.ready ? "ready" : ""}`}
@@ -798,7 +796,7 @@ if (data?.profile_photo_url) {
       </button>
     </div>
 
-    {/* ✅ Tabs */}
+   
     <div className="nav-notifTabs" role="tablist" aria-label="Filtrar notificaciones">
       <button
         type="button"
@@ -833,7 +831,7 @@ if (data?.profile_photo_url) {
           <button
             key={n.id}
             className={`nav-notifItem ${!n.read ? "unread" : "read"}`}
-            onClick={() => handleMarkOneSeen(n.id)} // ✅ NO cierra, solo marca leída
+            onClick={() => handleMarkOneSeen(n.id)} 
             type="button"
           >
             <span className="nav-notifAvatar">
@@ -859,7 +857,7 @@ if (data?.profile_photo_url) {
       )}
     </div>
 
-    {/* ✅ Marcar todas sin cerrar */}
+    
     <button
       className="nav-notifFooter solid"
       type="button"
@@ -941,7 +939,7 @@ if (data?.profile_photo_url) {
 
 {/* MOBILE DRAWER */}
 <div className={`nav-drawer ${mobileOpen ? "open" : ""}`} role="dialog" aria-modal="true">
-  {/* ✅ Backdrop primero para que NO tape el panel */}
+  
   <button
     className="nav-drawer-backdrop"
     onClick={() => setMobileOpen(false)}
@@ -950,7 +948,7 @@ if (data?.profile_photo_url) {
     type="button"
   />
 
-  {/* ✅ Panel encima */}
+ 
   <div className="nav-drawer-inner" role="document">
     <div className="nav-drawer-head">
       <img className="nav-drawer-logo" src="/assets/ECOVISACONTEXTO.png" alt="ECOVISA" />
@@ -985,7 +983,7 @@ if (data?.profile_photo_url) {
     </button>
   </div>
 </div>
-      {/* MODAL CROP (tipo FB) */}
+      {/* MODAL CROP */}
 {cropOpen && (
   <div className="avatarCrop-backdrop" role="dialog" aria-modal="true">
     <div className="avatarCrop-modal">

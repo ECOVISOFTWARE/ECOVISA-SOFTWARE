@@ -962,7 +962,7 @@ router.get("/:id/answers", branchFilter, async (req, res) => {
       query = query.eq("worker_id", worker.id);
     }
 
-    // ✅ Filtro de base: Dirección ve todas; otros solo las de su base
+    // Filtro de base: Dirección ve todas; otros solo las de su base
     if (!req.isDirector && req.branchId) {
       query = query.eq("branch_id", req.branchId);
     }
@@ -1195,7 +1195,7 @@ router.post("/:id/answers", branchFilter, async (req, res) => {
         answers,
         status: status || "SUBMITTED",
         last_edited: new Date().toISOString(),
-        // ✅ hereda la base del worker que responde
+        //hereda la base del worker que responde
         branch_id: req.branchId || null,
       })
       .select("*")

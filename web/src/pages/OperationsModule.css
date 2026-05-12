@@ -135,3 +135,1004 @@ select.opsInput { cursor:pointer; }
   .opsDrawer { width:100vw; }
   .opsStatusTabs { overflow-x:auto; flex-wrap:nowrap; padding-bottom:4px; }
 }
+/* ── Módulo tabs principales ─────────────────────────────────────────────── */
+.opsModuleHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.opsModuleTabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+  border-bottom: 2px solid rgba(15,23,42,0.08);
+}
+
+.opsModuleTab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 20px;
+  border: 1.5px solid rgba(15,23,42,0.08);
+  border-radius: 14px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  transition: all 0.18s;
+  min-width: 180px;
+  text-align: left;
+  border-bottom: 2px solid transparent;
+  position: relative;
+  bottom: -2px;
+}
+
+.opsModuleTab svg {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.opsModuleTab:hover {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+.opsModuleTab.active {
+  border-color: #0f172a;
+  border-bottom-color: #fff;
+  color: #0f172a;
+  background: #fff;
+  z-index: 1;
+}
+
+.opsModuleTabSub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+
+.opsModuleTab.active .opsModuleTabSub {
+  color: #64748b;
+}
+
+/* Wrapper interno para la pestaña de seguimiento general */
+.opsInnerWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 760px) {
+  .opsModuleTabs {
+    gap: 6px;
+  }
+  .opsModuleTab {
+    min-width: 140px;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+.opsServicesExcelTable{
+  min-width:2100px;
+}
+
+.opsServicesExcelTable thead th{
+  font-size:10px;
+  padding:8px 10px;
+  white-space:nowrap;
+}
+
+.opsServicesExcelTable tbody td{
+  font-size:12px;
+  padding:7px 10px;
+  white-space:nowrap;
+}
+
+.opsServiceRow--bill{
+  background:#fff7ed;
+}
+
+.opsBillAlert{
+  color:#dc2626;
+  font-weight:1000;
+}
+
+.opsMuted{
+  color:#94a3b8;
+  font-weight:900;
+}
+
+.opsRouteExcelGrid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:18px;
+}
+
+.opsRouteExcelBlock{
+  background:#fff;
+  border:1px solid #111827;
+  overflow:auto;
+  box-shadow:0 12px 28px rgba(15,23,42,0.08);
+}
+
+.opsRouteExcelTitle{
+  padding:8px 10px;
+  font-size:18px;
+  font-weight:1000;
+  color:#000;
+  border-bottom:1px solid #111827;
+}
+
+.opsRouteExcelTitle--yellow{
+  background:#fff200;
+}
+
+.opsRouteExcelTitle--blue{
+  background:#09b7e8;
+}
+
+.opsRouteExcelTable{
+  width:100%;
+  border-collapse:collapse;
+  min-width:780px;
+}
+
+.opsRouteExcelTable th,
+.opsRouteExcelTable td{
+  border:1px solid #111827;
+  padding:6px 8px;
+  font-size:13px;
+  color:#111827;
+  background:#fff;
+}
+
+.opsRouteExcelTable th{
+  font-weight:1000;
+  text-align:left;
+}
+
+.opsRouteExcelTable th:nth-child(2),
+.opsRouteExcelTable th:nth-child(3),
+.opsRouteExcelTable th:nth-child(4),
+.opsRouteExcelTable td:nth-child(2),
+.opsRouteExcelTable td:nth-child(3),
+.opsRouteExcelTable td:nth-child(4){
+  text-align:center;
+  width:70px;
+}
+
+.opsRouteExcelRow--bill td{
+  background:#fee2e2;
+}
+
+.opsRouteExcelTotal td{
+  font-weight:1000;
+  background:#f8fafc;
+}
+
+.opsRouteExcelEmpty{
+  text-align:center;
+  color:#64748b !important;
+  font-weight:900;
+  padding:18px !important;
+}
+
+/* =========================
+   OPS — ECOVISA PRO REWORK
+========================= */
+
+.opsModuleTabs{
+  border-bottom:0;
+  gap:12px;
+}
+
+.opsModuleTab{
+  min-width:260px;
+  border-radius:22px;
+  padding:18px 20px;
+  border:1px solid rgba(15,23,42,.08);
+  background:rgba(255,255,255,.78);
+  box-shadow:0 14px 34px rgba(15,23,42,.06);
+}
+
+.opsModuleTab.active{
+  border-color:rgba(15,23,42,.16);
+  background:#fff;
+  box-shadow:0 18px 45px rgba(15,23,42,.10);
+}
+
+.opsServiceModal{
+  width:min(980px, calc(100vw - 42px));
+}
+
+.opsModalSub{
+  margin-top:4px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+}
+
+.opsFormSection{
+  padding:16px;
+  border:1px solid rgba(15,23,42,.08);
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 10px 25px rgba(15,23,42,.035);
+  margin-bottom:14px;
+}
+
+.opsFormSectionTitle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:14px;
+  font-size:13px;
+  font-weight:1000;
+  color:#0f172a;
+  text-transform:uppercase;
+  letter-spacing:.05em;
+}
+
+.opsGrid--four{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+
+.opsCalculatedBox{
+  margin-top:14px;
+  min-height:64px;
+  border-radius:16px;
+  background:#0f172a;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+}
+
+.opsCalculatedBox svg{
+  font-size:22px;
+}
+
+.opsCalculatedBox span{
+  display:block;
+  font-size:11px;
+  font-weight:900;
+  color:rgba(255,255,255,.62);
+  text-transform:uppercase;
+}
+
+.opsCalculatedBox strong{
+  display:block;
+  margin-top:2px;
+  font-size:20px;
+  font-weight:1000;
+}
+
+.opsInput--danger{
+  color:#b91c1c;
+  background:#fff7ed;
+  border-color:#fed7aa;
+}
+
+.opsDaysGrid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:10px;
+}
+
+.opsDayCheck,
+.opsRemovedCheck{
+  min-height:46px;
+  border:1px solid rgba(15,23,42,.08);
+  background:#f8fafc;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:1000;
+  color:#0f172a;
+}
+
+.opsRemovedCheck{
+  justify-content:flex-start;
+  padding:0 14px;
+  margin-top:22px;
+}
+
+.opsDayCheck input,
+.opsRemovedCheck input{
+  width:16px;
+  height:16px;
+  accent-color:#0f172a;
+}
+
+.opsRouteHero{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px;
+  border-radius:24px;
+  background:rgba(255,255,255,.82);
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:0 16px 38px rgba(15,23,42,.06);
+}
+
+.opsRouteFilters{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.opsRouteFilterPill{
+  height:44px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid rgba(15,23,42,.08);
+  background:#fff;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#475569;
+  font-size:13px;
+  font-weight:900;
+}
+
+.opsRouteBoard{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+}
+
+.opsRouteExcelBlock{
+  border:0;
+  border-radius:22px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 18px 46px rgba(15,23,42,.08);
+}
+
+.opsRouteExcelTitle{
+  padding:16px 18px;
+  border-bottom:0;
+  color:#fff;
+  font-size:18px;
+  text-transform:uppercase;
+  letter-spacing:-.03em;
+}
+
+.opsRouteExcelTitle--dark{
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+}
+
+.opsRouteExcelTitle--green{
+  background:linear-gradient(135deg,#14532d,#166534);
+}
+
+.opsRouteExcelTable{
+  min-width:100%;
+}
+
+.opsRouteExcelTable th,
+.opsRouteExcelTable td{
+  border:0;
+  border-bottom:1px solid #eef2f7;
+  padding:12px 14px;
+}
+
+.opsRouteExcelTable th{
+  background:#f8fafc;
+  color:#475569;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+
+.opsRouteExcelTable td{
+  font-size:13px;
+  font-weight:800;
+}
+
+.opsRouteExcelTotal td{
+  background:#f8fafc;
+  color:#0f172a;
+}
+
+.opsRouteExcelRow--bill td{
+  background:#fff7ed;
+}
+
+.opsRouteExcelEmpty{
+  border-bottom:1px solid #eef2f7 !important;
+}
+
+@media (max-width:980px){
+  .opsRouteBoard{
+    grid-template-columns:1fr;
+  }
+
+  .opsGrid--four{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .opsDaysGrid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
+@media (max-width:760px){
+  .opsModuleTab{
+    width:100%;
+    min-width:0;
+  }
+
+  .opsRouteHero{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .opsGrid--four,
+  .opsDaysGrid{
+    grid-template-columns:1fr;
+  }
+}
+
+/* =========================
+   OPS FINAL CLEAN OVERRIDES
+========================= */
+
+.opsModuleHeader{
+  align-items:center;
+  margin-bottom:4px;
+}
+
+.opsTopMiniTabs{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:4px;
+  border-radius:999px;
+  background:rgba(255,255,255,.42);
+  border:1px solid rgba(15,23,42,.06);
+  box-shadow:none;
+}
+
+.opsTopMiniTab{
+  height:34px;
+  padding:0 12px;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  color:#64748b;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:1000;
+  transition:.18s ease;
+}
+
+.opsTopMiniTab svg{
+  font-size:15px;
+}
+
+.opsTopMiniTab:hover{
+  color:#0f172a;
+  background:rgba(15,23,42,.04);
+}
+
+.opsTopMiniTab.active{
+  background:#0f172a;
+  color:#fff;
+  box-shadow:0 8px 18px rgba(15,23,42,.16);
+}
+
+.opsModuleTabs{
+  display:none !important;
+}
+
+.opsRouteHero{
+  display:none !important;
+}
+
+.opsRouteHeader{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  padding:0;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+
+.opsRouteTitle{
+  font-size:24px !important;
+}
+
+.opsRouteFilters{
+  display:grid;
+  grid-template-columns:minmax(280px,1fr) auto auto auto;
+  gap:10px;
+  align-items:center;
+}
+
+.opsDateFilters{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.opsDateInput{
+  height:44px;
+  min-width:150px;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid rgba(15,23,42,.08);
+  background:#fff;
+  color:#0f172a;
+  font-size:13px;
+  font-weight:900;
+  outline:none;
+}
+
+.opsDateInput:focus{
+  border-color:#0f172a;
+}
+
+.opsRouteClearBtn{
+  height:44px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid rgba(15,23,42,.08);
+  background:rgba(255,255,255,.72);
+  color:#64748b;
+  font-size:13px;
+  font-weight:1000;
+  cursor:pointer;
+}
+
+.opsRouteClearBtn:hover{
+  color:#0f172a;
+  background:#fff;
+}
+
+.opsRouteFilterPill{
+  white-space:nowrap;
+}
+
+@media (max-width:980px){
+  .opsRouteFilters{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media (max-width:760px){
+  .opsModuleHeader{
+    align-items:stretch;
+  }
+
+  .opsTopMiniTabs{
+    width:100%;
+    justify-content:space-between;
+  }
+
+  .opsTopMiniTab{
+    flex:1;
+    justify-content:center;
+  }
+
+  .opsRouteHeader{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .opsRouteFilters{
+    grid-template-columns:1fr;
+  }
+
+  .opsDateFilters{
+    width:100%;
+    flex-direction:column;
+  }
+
+  .opsDateInput,
+  .opsRouteClearBtn{
+    width:100%;
+  }
+}
+/* =========================
+   OPS CLIENT / MAP / INVOICE
+========================= */
+
+.opsMapInputRow{
+  display:grid;
+  grid-template-columns:1fr 46px;
+  gap:8px;
+  align-items:center;
+}
+
+.opsMapPreview{
+  margin-top:14px;
+  border:1px solid rgba(15,23,42,.08);
+  background:#f8fafc;
+  border-radius:18px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+
+.opsMapPreviewInfo{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+}
+
+.opsMapPreviewInfo svg{
+  font-size:24px;
+  color:#0f172a;
+  flex-shrink:0;
+}
+
+.opsMapPreviewInfo strong{
+  display:block;
+  color:#0f172a;
+  font-size:14px;
+  font-weight:1000;
+}
+
+.opsMapPreviewInfo span{
+  display:block;
+  margin-top:2px;
+  color:#64748b;
+  font-size:12px;
+  font-weight:800;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:620px;
+}
+
+.opsLocationCell{
+  border:0;
+  background:transparent;
+  color:#0f172a;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  font:inherit;
+  font-weight:1000;
+  padding:0;
+}
+
+.opsLocationCell:hover{
+  color:#2563eb;
+  text-decoration:underline;
+}
+
+.opsIconBtn:disabled{
+  opacity:.38;
+  cursor:not-allowed;
+  transform:none !important;
+}
+
+@media (max-width:760px){
+  .opsMapPreview{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .opsMapPreviewInfo span{
+    max-width:100%;
+  }
+}
+/* ══════════════════════════════════════════════════════════
+   LocationMapPicker — mini mapa de ubicación
+   ══════════════════════════════════════════════════════════ */
+
+.opsLocPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(15,23,42,0.10);
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15,23,42,0.07);
+}
+
+/* Barra de búsqueda ───────────────────────────────────── */
+.opsLocSearchRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0;
+  border-bottom: 1px solid rgba(15,23,42,0.07);
+}
+
+.opsLocSearchBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: #fff;
+}
+
+.opsLocSearchIcon {
+  font-size: 18px;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.opsLocInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  height: 48px;
+  font-family: inherit;
+}
+
+.opsLocInput::placeholder { color: #94a3b8; }
+
+.opsLocSearchBtn {
+  height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-left: 1px solid rgba(15,23,42,0.07);
+  background: #0f172a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.opsLocSearchBtn:hover   { opacity: 0.85; }
+.opsLocSearchBtn:disabled{ opacity: 0.5; cursor: not-allowed; }
+
+/* Resultados dropdown ─────────────────────────────────── */
+.opsLocResults {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+  border-bottom: 1px solid rgba(15,23,42,0.07);
+}
+
+.opsLocResult {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid rgba(15,23,42,0.05);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+
+.opsLocResult:last-child { border-bottom: none; }
+.opsLocResult:hover      { background: #f8fafc; }
+
+.opsLocResultPin {
+  font-size: 16px;
+  color: #6366f1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.opsLocResultText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.opsLocResultText strong {
+  font-size: 13px;
+  font-weight: 900;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opsLocResultText span {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mini mapa ───────────────────────────────────────────── */
+.opsLocMap {
+  position: relative;
+  height: 240px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.opsLocMapFrame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Chip flotante con el nombre de la ubicación */
+.opsLocMapOverlay {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15,23,42,0.88);
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  max-width: 90%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 20px rgba(15,23,42,0.28);
+  pointer-events: none;
+}
+
+.opsLocMapPin { font-size: 14px; color: #6366f1; flex-shrink: 0; }
+
+/* Estado vacío del mapa */
+.opsLocMapEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  color: #94a3b8;
+}
+
+.opsLocMapEmptyIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: #6366f1;
+}
+
+.opsLocMapEmpty p {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+  color: #94a3b8;
+}
+/* ── Billing alert en tabla ──────────────────────────────── */
+.opsBillingCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  border: none;
+  cursor: default;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.opsBillingCell--done {
+  background: rgba(22,163,74,0.10);
+  color: #16a34a;
+}
+
+.opsBillingCell--bill {
+  background: rgba(220,38,38,0.10);
+  color: #dc2626;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.opsBillingCell--bill:hover {
+  background: rgba(220,38,38,0.20);
+}
+
+/* ── Folio box en modal ──────────────────────────────────── */
+.opsFolioBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid #dbe2ea;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.opsFolioBox svg { font-size: 18px; flex-shrink: 0; }
+
+.opsFolioBox span:first-of-type { flex: 1; }
+
+.opsFolioBoxTag {
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(22,163,74,0.12);
+  color: #15803d !important;
+  white-space: nowrap;
+}
+
+.opsFolioBox--empty {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-style: dashed;
+}
+
+/* ── Billing alert box en modal ──────────────────────────── */
+.opsBillingAlertBox {
+  display: flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 900;
+  border: 1.5px solid;
+}
+
+.opsBillingAlertBox--ok {
+  background: #f8fafc;
+  color: #94a3b8;
+  border-color: #e2e8f0;
+}
+
+.opsBillingAlertBox--bill {
+  background: rgba(220,38,38,0.06);
+  color: #dc2626;
+  border-color: rgba(220,38,38,0.3);
+}
+
+.opsBillingAlertBox--done {
+  background: rgba(22,163,74,0.06);
+  color: #16a34a;
+  border-color: rgba(22,163,74,0.3);
+}

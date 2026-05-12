@@ -258,7 +258,7 @@ router.get("/events", branchFilter, async (req, res) => {
       .gte("ends_at", from)
       .order("starts_at", { ascending: true });
 
-    // ✅ Filtro de base: Dirección ve todo; otros solo su base o eventos sin base
+    // Filtro de base: Dirección ve todo; otros solo su base o eventos sin base
     if (req.branchId) {
       eventsQuery = eventsQuery.or(`branch_id.eq.${req.branchId},branch_id.is.null`);
     }
@@ -381,7 +381,7 @@ router.post("/events", branchFilter, upload.array("files", 5), async (req, res) 
         color: eventColor,
         created_by: creator.id,
         creator_department_id: creator.department_id || null,
-        // ✅ hereda la base del worker que crea
+        // hereda la base del worker que crea
         branch_id: req.branchId || null,
       })
       .select("*")
